@@ -1,31 +1,33 @@
+@import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
 @layer base {
   body {
-    @apply bg-gray-50 text-gray-900 font-sans antialiased;
+    background-color: rgb(249 250 251);
+    color: rgb(17 24 39);
+    font-family: Inter, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 }
 
-@layer components {
+@layer utilities {
   /* Scrollbar personalizado */
   .custom-scrollbar::-webkit-scrollbar {
-    @apply w-2;
+    width: 0.5rem;
   }
 
   .custom-scrollbar::-webkit-scrollbar-track {
-    @apply bg-gray-100;
+    background-color: rgb(243 244 246);
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    @apply bg-gray-300 rounded;
+    background-color: rgb(209 213 219);
+    border-radius: 0.25rem;
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    @apply bg-gray-400;
+    background-color: rgb(156 163 175);
   }
 }

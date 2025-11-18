@@ -4,6 +4,7 @@ import { Button } from '../common/Button';
 import { Select } from '../common/Select';
 import { Badge } from '../common/Badge';
 import { STATUS_ICONS, GROUP_TYPES } from '../../utils/constants';
+import DetailPanel from '../generation/DetailPanel';
 import {
   ChevronDownIcon,
   ChevronRightIcon,
@@ -12,9 +13,10 @@ import {
 } from '@heroicons/react/24/outline';
 
 const KeywordGroupTree = () => {
-  const { groups, updateGroup, deleteGroup, setSelectedGroup } = useApp();
+  const { groups, updateGroup, deleteGroup } = useApp();
   const [expandedGroups, setExpandedGroups] = useState([]);
   const [filter, setFilter] = useState('all');
+  const [selectedGroup, setSelectedGroup] = useState(null);
 
   const toggleExpand = (groupId) => {
     setExpandedGroups((prev) =>
@@ -34,7 +36,6 @@ const KeywordGroupTree = () => {
 
   const handleViewDetails = (group) => {
     setSelectedGroup(group);
-    // Aquí se abrirá el DetailPanel en una futura implementación
   };
 
   const filteredGroups = groups.filter((g) => {
@@ -192,10 +193,12 @@ const KeywordGroupTree = () => {
         })}
       </div>
 
-      {!group.type && (
-        <div className="mt-4 bg-warning-50 border border-warning-200 rounded p-3 text-sm text-warning-700">
-          ⚠️ Etiqueta este grupo como "Producto" o "Colección" para poder ver los detalles y generar contenido
-        </div>
+      {/* DetailPanel Modal */}
+      {selectedGroup && (
+        <DetailPanel
+          group={selectedGroup}
+          onClose={() => setSelectedGroup(null)}
+        />
       )}
     </div>
   );
