@@ -17,7 +17,7 @@ Sistema completo de generación de contenido SEO-optimizado para Shopify usando 
 ## 📋 Requisitos Previos
 
 - Node.js 18+
-- npm o yarn
+- npm o yarnrr
 - Cuenta de Shopify con acceso Admin API
 - API Keys de al menos un proveedor de IA:
   - OpenAI (GPT-5)
