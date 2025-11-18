@@ -17,14 +17,29 @@ const KeywordImporter = () => {
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
-        const json = JSON.parse(e.target.result);
+        let content = e.target.result.trim();
+        let json;
 
-        if (!Array.isArray(json)) {
-          throw new Error('El archivo debe contener un array de grupos');
+        // Estrategia 1: Intentar parsear tal cual
+        try {
+          json = JSON.parse(content);
+        } catch (parseError) {
+          // Estrategia 2: Si falla, intentar envolver en brackets (para manejar objetos separados por comas)
+          try {
+            json = JSON.parse(`[${content}]`);
+          } catch (wrapError) {
+            throw new Error('El archivo JSON no es válido. Verifica que tenga la sintaxis correcta.');
+          }
         }
 
+        // Si el resultado es un objeto único, envolverlo en un array
+        if (!Array.isArray(json)) {
+          json = [json];
+        }
+
+        // Validar la estructura
         if (!validateKeywordGroupStructure(json)) {
-          throw new Error('Estructura de JSON inválida');
+          throw new Error('Estructura de JSON inválida. Cada grupo debe tener: id, name, isGroup, y children con keywords.');
         }
 
         const totalGroups = json.length;
