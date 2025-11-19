@@ -13,12 +13,12 @@ export const Button = ({
 
   const variantClasses = {
     primary: 'bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500',
-    secondary: 'bg-gray-200 text-gray-900 hover:bg-gray-300 focus:ring-gray-500',
+    secondary: 'bg-gray-700 text-white hover:bg-gray-800 focus:ring-gray-500',
     success: 'bg-success-600 text-white hover:bg-success-700 focus:ring-success-500',
     warning: 'bg-warning-600 text-white hover:bg-warning-700 focus:ring-warning-500',
     error: 'bg-error-600 text-white hover:bg-error-700 focus:ring-error-500',
-    ghost: 'text-gray-700 hover:bg-gray-100 focus:ring-gray-500',
-    outline: 'border-2 border-primary-600 text-primary-600 hover:bg-primary-50 focus:ring-primary-500'
+    ghost: 'bg-gray-800 text-white hover:bg-gray-900 focus:ring-gray-500',
+    outline: 'bg-gray-700 text-white hover:bg-gray-800 focus:ring-gray-500 border-2 border-gray-600'
   };
 
   const sizeClasses = {
