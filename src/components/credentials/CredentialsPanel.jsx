@@ -40,13 +40,34 @@ const CredentialsPanel = () => {
       shopifyService.init(formData.shopify.storeUrl, formData.shopify.accessToken);
       const result = await shopifyService.testConnection();
 
-      handleChange('shopify', 'status', result.success ? 'connected' : 'error');
+      const newStatus = result.success ? 'connected' : 'error';
+      const updatedFormData = {
+        ...formData,
+        shopify: {
+          ...formData.shopify,
+          status: newStatus
+        }
+      };
+
+      setFormData(updatedFormData);
+      saveCredentials(updatedFormData); // Guardar después de probar
+
       setErrors((prev) => ({
         ...prev,
         shopify: result.success ? null : result.error
       }));
     } catch (error) {
-      handleChange('shopify', 'status', 'error');
+      const updatedFormData = {
+        ...formData,
+        shopify: {
+          ...formData.shopify,
+          status: 'error'
+        }
+      };
+
+      setFormData(updatedFormData);
+      saveCredentials(updatedFormData); // Guardar también cuando hay error
+
       setErrors((prev) => ({ ...prev, shopify: error.message }));
     } finally {
       setTesting((prev) => ({ ...prev, shopify: false }));
@@ -85,7 +106,11 @@ const CredentialsPanel = () => {
                   name="aiModel"
                   value={key}
                   checked={formData.selectedAIModel === key}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, selectedAIModel: e.target.value }))}
+                  onChange={(e) => {
+                    const updated = { ...formData, selectedAIModel: e.target.value };
+                    setFormData(updated);
+                    saveCredentials(updated); // Auto-guardar al cambiar modelo
+                  }}
                   className="mt-1 mr-3"
                 />
                 <div className="flex-1">
