@@ -71,7 +71,14 @@ export const useGeneration = () => {
     } catch (err) {
       console.error('Error generando contenido:', err);
       setError(err.message);
-      updateGroupStatus(group.id, 'error');
+      updateGroup(group.id, {
+        generated: {
+          ...(group.generated || {}),
+          status: 'error',
+          errorMessage: err.message,
+          lastError: new Date().toISOString()
+        }
+      });
       setIsGenerating(false);
       return { success: false, error: err.message };
     }

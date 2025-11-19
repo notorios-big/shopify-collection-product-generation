@@ -20,7 +20,8 @@ const GroupItem = ({
   level,
   onTypeChange,
   onViewDetails,
-  onDelete
+  onDelete,
+  onShowError
 }) => {
   const isExpanded = expandedGroups.includes(item.id);
   const children = item.children || [];
@@ -75,9 +76,14 @@ const GroupItem = ({
           <span className="font-semibold text-gray-900 text-sm">
             {item.type === 'product' ? '📦' : item.type === 'collection' ? '📚' : '📁'} {item.name}
           </span>
-          <Badge variant={status === 'in_shopify' ? 'success' : 'default'} size="sm">
-            {statusIcon}
-          </Badge>
+          <div
+            className={status === 'error' ? 'cursor-pointer' : ''}
+            onClick={() => status === 'error' && onShowError(item)}
+          >
+            <Badge variant={status === 'in_shopify' ? 'success' : status === 'error' ? 'error' : 'default'} size="sm">
+              {statusIcon}
+            </Badge>
+          </div>
           <div className="flex-1" />
           <div className="flex items-center space-x-2 text-xs font-medium text-gray-700">
             <span>📊 {keywordCount} kws</span>
@@ -133,6 +139,7 @@ const GroupItem = ({
                   onTypeChange={onTypeChange}
                   onViewDetails={onViewDetails}
                   onDelete={onDelete}
+                  onShowError={onShowError}
                 />
               ) : (
                 <div
@@ -156,11 +163,16 @@ const KeywordGroupTree = () => {
   const [expandedGroups, setExpandedGroups] = useState([]);
   const [filter, setFilter] = useState('all');
   const [selectedGroup, setSelectedGroup] = useState(null);
+  const [errorGroup, setErrorGroup] = useState(null);
 
   const toggleExpand = (groupId) => {
     setExpandedGroups((prev) =>
       prev.includes(groupId) ? prev.filter((id) => id !== groupId) : [...prev, groupId]
     );
+  };
+
+  const handleShowError = (group) => {
+    setErrorGroup(group);
   };
 
   // Función recursiva para contar keywords y volumen total
@@ -290,9 +302,14 @@ const KeywordGroupTree = () => {
                         {group.type === 'product' ? '📦' : group.type === 'collection' ? '📚' : '📝'}{' '}
                         {group.name}
                       </h3>
-                      <Badge variant={status === 'in_shopify' ? 'success' : 'default'}>
-                        {statusIcon} {status.replace('_', ' ')}
-                      </Badge>
+                      <div
+                        className={status === 'error' ? 'cursor-pointer' : ''}
+                        onClick={() => status === 'error' && handleShowError(group)}
+                      >
+                        <Badge variant={status === 'in_shopify' ? 'success' : status === 'error' ? 'error' : 'default'}>
+                          {statusIcon} {status.replace('_', ' ')}
+                        </Badge>
+                      </div>
                     </div>
 
                     <div className="flex items-center space-x-4 text-sm font-medium text-gray-700 mb-3">
@@ -348,6 +365,7 @@ const KeywordGroupTree = () => {
                           onTypeChange={handleTypeChange}
                           onViewDetails={handleViewDetails}
                           onDelete={handleDelete}
+                          onShowError={handleShowError}
                         />
                       ) : (
                         <div
@@ -373,6 +391,51 @@ const KeywordGroupTree = () => {
           group={selectedGroup}
           onClose={() => setSelectedGroup(null)}
         />
+      )}
+
+      {/* Error Modal */}
+      {errorGroup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full p-6">
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex items-center space-x-3">
+                <span className="text-4xl">🔴</span>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900">Error al Generar Contenido</h3>
+                  <p className="text-sm text-gray-600">{errorGroup.name}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setErrorGroup(null)}
+                className="text-gray-600 hover:text-gray-900 text-2xl"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="bg-error-50 border border-error-200 rounded-lg p-4">
+              <p className="text-sm font-medium text-error-900 mb-2">Mensaje de Error:</p>
+              <pre className="text-sm text-error-800 whitespace-pre-wrap break-words font-mono">
+                {errorGroup.generated?.errorMessage || 'Error desconocido'}
+              </pre>
+            </div>
+
+            <div className="mt-6 flex justify-end space-x-3">
+              <Button variant="ghost" onClick={() => setErrorGroup(null)}>
+                Cerrar
+              </Button>
+              <Button
+                variant="primary"
+                onClick={() => {
+                  setErrorGroup(null);
+                  handleViewDetails(errorGroup);
+                }}
+              >
+                Ir a Generación
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
