@@ -129,17 +129,36 @@ export const AppProvider = ({ children }) => {
 
   // Obtener estadísticas
   const getStats = () => {
+    // Función recursiva para contar keywords y volumen
+    const countRecursive = (items) => {
+      let keywordCount = 0;
+      let totalVolume = 0;
+
+      items.forEach((item) => {
+        if (item.isGroup) {
+          // Es un subgrupo, contar recursivamente
+          const subStats = countRecursive(item.children || []);
+          keywordCount += subStats.keywordCount;
+          totalVolume += subStats.totalVolume;
+        } else {
+          // Es un keyword individual
+          keywordCount++;
+          totalVolume += item.volume || 0;
+        }
+      });
+
+      return { keywordCount, totalVolume };
+    };
+
     const totalGroups = groups.length;
-    const totalKeywords = groups.reduce(
-      (sum, g) => sum + (g.children?.length || 0),
-      0
-    );
-    const totalVolume = groups.reduce(
-      (sum, g) =>
-        sum +
-        (g.children?.reduce((s, c) => s + (c.volume || 0), 0) || 0),
-      0
-    );
+    let totalKeywords = 0;
+    let totalVolume = 0;
+
+    groups.forEach((group) => {
+      const stats = countRecursive(group.children || []);
+      totalKeywords += stats.keywordCount;
+      totalVolume += stats.totalVolume;
+    });
 
     const byStatus = {
       [STATUS.NOT_GENERATED]: groups.filter(

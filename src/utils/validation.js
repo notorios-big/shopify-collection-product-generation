@@ -37,14 +37,36 @@ export const validateJSON = (jsonString) => {
 export const validateKeywordGroupStructure = (groups) => {
   if (!Array.isArray(groups)) return false;
 
-  for (const group of groups) {
-    if (!group.id || !group.name || !group.isGroup) return false;
-    if (!Array.isArray(group.children)) return false;
+  const validateItem = (item) => {
+    // Validar que tenga id
+    if (!item.id) return false;
 
-    for (const child of group.children) {
-      if (!child.id || !child.keyword || child.isGroup !== false) return false;
-      if (typeof child.volume !== 'number') return false;
+    // Si es un grupo
+    if (item.isGroup === true) {
+      if (!item.name) return false;
+      if (!Array.isArray(item.children)) return false;
+
+      // Validar recursivamente todos los children
+      for (const child of item.children) {
+        if (!validateItem(child)) return false;
+      }
     }
+    // Si es un keyword individual
+    else if (item.isGroup === false) {
+      if (!item.keyword) return false;
+      if (typeof item.volume !== 'number') return false;
+    }
+    // Si isGroup no es ni true ni false
+    else {
+      return false;
+    }
+
+    return true;
+  };
+
+  // Validar cada grupo de nivel superior
+  for (const group of groups) {
+    if (!validateItem(group)) return false;
   }
 
   return true;
