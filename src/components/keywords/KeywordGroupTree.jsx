@@ -13,22 +13,41 @@ import {
 } from '@heroicons/react/24/outline';
 
 // Componente recursivo para renderizar subgrupos
-const GroupItem = ({ item, expandedGroups, toggleExpand, level }) => {
+const GroupItem = ({
+  item,
+  expandedGroups,
+  toggleExpand,
+  level,
+  onTypeChange,
+  onViewDetails,
+  onDelete
+}) => {
   const isExpanded = expandedGroups.includes(item.id);
   const children = item.children || [];
 
-  // Calcular volumen total recursivamente
-  const calculateTotalVolume = (items) => {
-    return items.reduce((sum, child) => {
-      if (child.isGroup) {
-        // Si es un subgrupo, sumar recursivamente
-        return sum + calculateTotalVolume(child.children || []);
-      }
-      return sum + (child.volume || 0);
-    }, 0);
+  // Calcular volumen total y keywords recursivamente
+  const calculateGroupStats = (items) => {
+    let keywordCount = 0;
+    let totalVolume = 0;
+
+    const countRecursive = (subItems) => {
+      subItems.forEach((subItem) => {
+        if (subItem.isGroup) {
+          countRecursive(subItem.children || []);
+        } else {
+          keywordCount++;
+          totalVolume += subItem.volume || 0;
+        }
+      });
+    };
+
+    countRecursive(items);
+    return { keywordCount, totalVolume };
   };
 
-  const totalVolume = calculateTotalVolume(children);
+  const { keywordCount, totalVolume } = calculateGroupStats(children);
+  const status = item.generated?.status || 'not_generated';
+  const statusIcon = STATUS_ICONS[status] || '⚪';
 
   const bgColors = [
     'bg-blue-50 border-blue-200',
@@ -41,28 +60,68 @@ const GroupItem = ({ item, expandedGroups, toggleExpand, level }) => {
   return (
     <div className={`border rounded-lg overflow-hidden mb-2 ${bgColor}`}>
       <div className="p-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2 flex-1">
-            <button
-              onClick={() => toggleExpand(item.id)}
-              className="text-gray-400 hover:text-gray-600"
-            >
-              {isExpanded ? (
-                <ChevronDownIcon className="w-4 h-4" />
-              ) : (
-                <ChevronRightIcon className="w-4 h-4" />
-              )}
-            </button>
-            <span className="font-medium text-gray-900 text-sm">📁 {item.name}</span>
-          </div>
-          <div className="flex items-center space-x-3 text-xs text-gray-600">
-            <span>{children.length} items</span>
-            <span>vol: {totalVolume}</span>
+        {/* Header del subgrupo */}
+        <div className="flex items-center space-x-2 mb-2">
+          <button
+            onClick={() => toggleExpand(item.id)}
+            className="text-gray-400 hover:text-gray-600"
+          >
+            {isExpanded ? (
+              <ChevronDownIcon className="w-4 h-4" />
+            ) : (
+              <ChevronRightIcon className="w-4 h-4" />
+            )}
+          </button>
+          <span className="font-medium text-gray-900 text-sm">
+            {item.type === 'product' ? '📦' : item.type === 'collection' ? '📚' : '📁'} {item.name}
+          </span>
+          <Badge variant={status === 'in_shopify' ? 'success' : 'default'} size="sm">
+            {statusIcon}
+          </Badge>
+          <div className="flex-1" />
+          <div className="flex items-center space-x-2 text-xs text-gray-600">
+            <span>📊 {keywordCount} kws</span>
+            <span>vol: {totalVolume.toLocaleString()}</span>
           </div>
         </div>
 
+        {/* Controles del subgrupo */}
+        <div className="flex items-center space-x-2 mb-2">
+          <Select
+            value={item.type || ''}
+            onChange={(e) => onTypeChange(item.id, e.target.value || null)}
+            options={[
+              { value: '', label: 'Sin etiquetar' },
+              { value: GROUP_TYPES.PRODUCT, label: 'Producto' },
+              { value: GROUP_TYPES.COLLECTION, label: 'Colección' }
+            ]}
+            className="w-40 text-sm"
+          />
+
+          {item.type && (
+            <Button
+              variant="primary"
+              size="sm"
+              icon={EyeIcon}
+              onClick={() => onViewDetails(item)}
+            >
+              Ver Detalle
+            </Button>
+          )}
+
+          <Button
+            variant="ghost"
+            size="sm"
+            icon={TrashIcon}
+            onClick={() => onDelete(item.id)}
+          >
+            Eliminar
+          </Button>
+        </div>
+
+        {/* Children expandidos */}
         {isExpanded && (
-          <div className="mt-2 pl-6 space-y-1">
+          <div className="mt-2 pl-4 space-y-1">
             {children.map((child) => (
               child.isGroup ? (
                 <GroupItem
@@ -71,6 +130,9 @@ const GroupItem = ({ item, expandedGroups, toggleExpand, level }) => {
                   expandedGroups={expandedGroups}
                   toggleExpand={toggleExpand}
                   level={level + 1}
+                  onTypeChange={onTypeChange}
+                  onViewDetails={onViewDetails}
+                  onDelete={onDelete}
                 />
               ) : (
                 <div
@@ -283,6 +345,9 @@ const KeywordGroupTree = () => {
                           expandedGroups={expandedGroups}
                           toggleExpand={toggleExpand}
                           level={1}
+                          onTypeChange={handleTypeChange}
+                          onViewDetails={handleViewDetails}
+                          onDelete={handleDelete}
                         />
                       ) : (
                         <div
