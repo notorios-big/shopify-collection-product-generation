@@ -15,10 +15,10 @@
     "@headlessui/react": "^2.2.9",
     "@heroicons/react": "^2.2.0",
     "axios": "^1.13.2",
-    "concurrently": "^9.1.2",
+    "concurrently": "^9.2.1",
     "cors": "^2.8.5",
     "crypto-js": "^4.2.0",
-    "dotenv": "^16.4.7",
+    "dotenv": "^16.6.1",
     "express": "^4.21.2",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
