@@ -8,7 +8,8 @@ import { Textarea } from '../common/Textarea';
 import { Badge } from '../common/Badge';
 import { HTMLPreview } from './HTMLPreview';
 import ImageGenerator from '../images/ImageGenerator';
-import { formatRelativeTime } from '../../utils/formatters';
+import VersionHistory from './VersionHistory';
+import storageService from '../../services/storageService';
 import {
   SparklesIcon,
   ArrowUpTrayIcon,
@@ -68,6 +69,18 @@ const GenerationTab = ({ group }) => {
         images
       }
     });
+  };
+
+  const handleRestoreVersion = (version) => {
+    storageService.restoreVersion(group.id, version.version);
+    const updatedGroup = storageService.getGroups().find(g => g.id === group.id);
+    if (updatedGroup) {
+      setEditedContent({
+        title: updatedGroup.generated.title,
+        handle: updatedGroup.generated.handle,
+        bodyHtml: updatedGroup.generated.bodyHtml
+      });
+    }
   };
 
   if (!hasContent && !isGenerating) {
@@ -256,31 +269,15 @@ const GenerationTab = ({ group }) => {
       {/* Versiones */}
       {group.generated?.versions && group.generated.versions.length > 0 && (
         <div className="border-t pt-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            📜 Versiones
+          <label className="block text-sm font-medium text-gray-700 mb-3">
+            📜 Historial de Versiones
           </label>
-          <div className="space-y-2">
-            {group.generated.versions.map((version) => (
-              <div
-                key={version.version}
-                className="flex items-center justify-between bg-gray-50 rounded px-3 py-2"
-              >
-                <div>
-                  <span className="text-sm font-medium text-gray-900">
-                    v{version.version}
-                  </span>
-                  {version.version === group.generated.currentVersion && (
-                    <Badge variant="primary" size="sm" className="ml-2">
-                      Actual
-                    </Badge>
-                  )}
-                </div>
-                <span className="text-xs text-gray-500">
-                  {formatRelativeTime(version.timestamp)}
-                </span>
-              </div>
-            ))}
-          </div>
+          <VersionHistory
+            groupId={group.id}
+            versions={group.generated.versions}
+            currentVersion={group.generated.currentVersion}
+            onRestore={handleRestoreVersion}
+          />
         </div>
       )}
 
