@@ -12,6 +12,83 @@ import {
   TrashIcon
 } from '@heroicons/react/24/outline';
 
+// Componente recursivo para renderizar subgrupos
+const GroupItem = ({ item, expandedGroups, toggleExpand, level }) => {
+  const isExpanded = expandedGroups.includes(item.id);
+  const children = item.children || [];
+
+  // Calcular volumen total recursivamente
+  const calculateTotalVolume = (items) => {
+    return items.reduce((sum, child) => {
+      if (child.isGroup) {
+        // Si es un subgrupo, sumar recursivamente
+        return sum + calculateTotalVolume(child.children || []);
+      }
+      return sum + (child.volume || 0);
+    }, 0);
+  };
+
+  const totalVolume = calculateTotalVolume(children);
+
+  const bgColors = [
+    'bg-blue-50 border-blue-200',
+    'bg-purple-50 border-purple-200',
+    'bg-green-50 border-green-200',
+    'bg-yellow-50 border-yellow-200',
+  ];
+  const bgColor = bgColors[Math.min(level, bgColors.length - 1)];
+
+  return (
+    <div className={`border rounded-lg overflow-hidden mb-2 ${bgColor}`}>
+      <div className="p-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2 flex-1">
+            <button
+              onClick={() => toggleExpand(item.id)}
+              className="text-gray-400 hover:text-gray-600"
+            >
+              {isExpanded ? (
+                <ChevronDownIcon className="w-4 h-4" />
+              ) : (
+                <ChevronRightIcon className="w-4 h-4" />
+              )}
+            </button>
+            <span className="font-medium text-gray-900 text-sm">📁 {item.name}</span>
+          </div>
+          <div className="flex items-center space-x-3 text-xs text-gray-600">
+            <span>{children.length} items</span>
+            <span>vol: {totalVolume}</span>
+          </div>
+        </div>
+
+        {isExpanded && (
+          <div className="mt-2 pl-6 space-y-1">
+            {children.map((child) => (
+              child.isGroup ? (
+                <GroupItem
+                  key={child.id}
+                  item={child}
+                  expandedGroups={expandedGroups}
+                  toggleExpand={toggleExpand}
+                  level={level + 1}
+                />
+              ) : (
+                <div
+                  key={child.id}
+                  className="flex items-center justify-between py-2 px-3 bg-white rounded text-sm"
+                >
+                  <span className="text-gray-700">{child.keyword}</span>
+                  <span className="text-gray-500">vol: {child.volume}</span>
+                </div>
+              )
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 const KeywordGroupTree = () => {
   const { groups, updateGroup, deleteGroup } = useApp();
   const [expandedGroups, setExpandedGroups] = useState([]);
@@ -22,6 +99,28 @@ const KeywordGroupTree = () => {
     setExpandedGroups((prev) =>
       prev.includes(groupId) ? prev.filter((id) => id !== groupId) : [...prev, groupId]
     );
+  };
+
+  // Función recursiva para contar keywords y volumen total
+  const calculateGroupStats = (children) => {
+    let keywordCount = 0;
+    let totalVolume = 0;
+
+    const countRecursive = (items) => {
+      items.forEach((item) => {
+        if (item.isGroup) {
+          // Es un subgrupo, contar recursivamente
+          countRecursive(item.children || []);
+        } else {
+          // Es un keyword individual
+          keywordCount++;
+          totalVolume += item.volume || 0;
+        }
+      });
+    };
+
+    countRecursive(children);
+    return { keywordCount, totalVolume };
   };
 
   const handleTypeChange = (groupId, type) => {
@@ -101,8 +200,8 @@ const KeywordGroupTree = () => {
       <div className="space-y-3">
         {filteredGroups.map((group) => {
           const isExpanded = expandedGroups.includes(group.id);
-          const keywords = group.children || [];
-          const totalVolume = keywords.reduce((sum, k) => sum + (k.volume || 0), 0);
+          const children = group.children || [];
+          const { keywordCount, totalVolume } = calculateGroupStats(children);
           const status = group.generated?.status || 'not_generated';
           const statusIcon = STATUS_ICONS[status] || '⚪';
 
@@ -135,8 +234,8 @@ const KeywordGroupTree = () => {
                     </div>
 
                     <div className="flex items-center space-x-4 text-sm text-gray-600 mb-3">
-                      <span>📊 {keywords.length} keywords</span>
-                      <span>Vol total: {totalVolume}</span>
+                      <span>📊 {keywordCount} keywords</span>
+                      <span>Vol total: {totalVolume.toLocaleString()}</span>
                     </div>
 
                     <div className="flex items-center space-x-3">
@@ -176,14 +275,24 @@ const KeywordGroupTree = () => {
 
                 {isExpanded && (
                   <div className="mt-4 pl-8 space-y-1">
-                    {keywords.map((kw) => (
-                      <div
-                        key={kw.id}
-                        className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded text-sm"
-                      >
-                        <span className="text-gray-700">{kw.keyword}</span>
-                        <span className="text-gray-500">vol: {kw.volume}</span>
-                      </div>
+                    {children.map((item) => (
+                      item.isGroup ? (
+                        <GroupItem
+                          key={item.id}
+                          item={item}
+                          expandedGroups={expandedGroups}
+                          toggleExpand={toggleExpand}
+                          level={1}
+                        />
+                      ) : (
+                        <div
+                          key={item.id}
+                          className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded text-sm"
+                        >
+                          <span className="text-gray-700">{item.keyword}</span>
+                          <span className="text-gray-500">vol: {item.volume}</span>
+                        </div>
+                      )
                     ))}
                   </div>
                 )}
