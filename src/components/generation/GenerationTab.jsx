@@ -215,7 +215,7 @@ const GenerationTab = ({ group }) => {
               ))}
             </div>
           ) : (
-            <p className="text-sm text-gray-500">Sin imágenes</p>
+            <p className="text-sm font-medium text-gray-700">Sin imágenes</p>
           )}
           <Button
             variant="outline"

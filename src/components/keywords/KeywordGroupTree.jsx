@@ -64,7 +64,7 @@ const GroupItem = ({
         <div className="flex items-center space-x-2 mb-2">
           <button
             onClick={() => toggleExpand(item.id)}
-            className="text-gray-400 hover:text-gray-600"
+            className="text-gray-600 hover:text-gray-900"
           >
             {isExpanded ? (
               <ChevronDownIcon className="w-4 h-4" />
@@ -72,14 +72,14 @@ const GroupItem = ({
               <ChevronRightIcon className="w-4 h-4" />
             )}
           </button>
-          <span className="font-medium text-gray-900 text-sm">
+          <span className="font-semibold text-gray-900 text-sm">
             {item.type === 'product' ? '📦' : item.type === 'collection' ? '📚' : '📁'} {item.name}
           </span>
           <Badge variant={status === 'in_shopify' ? 'success' : 'default'} size="sm">
             {statusIcon}
           </Badge>
           <div className="flex-1" />
-          <div className="flex items-center space-x-2 text-xs text-gray-600">
+          <div className="flex items-center space-x-2 text-xs font-medium text-gray-700">
             <span>📊 {keywordCount} kws</span>
             <span>vol: {totalVolume.toLocaleString()}</span>
           </div>
@@ -137,10 +137,10 @@ const GroupItem = ({
               ) : (
                 <div
                   key={child.id}
-                  className="flex items-center justify-between py-2 px-3 bg-white rounded text-sm"
+                  className="flex items-center justify-between py-2 px-3 bg-white rounded text-sm border border-gray-200"
                 >
-                  <span className="text-gray-700">{child.keyword}</span>
-                  <span className="text-gray-500">vol: {child.volume}</span>
+                  <span className="text-gray-900 font-medium">{child.keyword}</span>
+                  <span className="text-gray-700 font-medium">vol: {child.volume}</span>
                 </div>
               )
             ))}
@@ -278,7 +278,7 @@ const KeywordGroupTree = () => {
                     <div className="flex items-center space-x-3 mb-2">
                       <button
                         onClick={() => toggleExpand(group.id)}
-                        className="text-gray-400 hover:text-gray-600"
+                        className="text-gray-600 hover:text-gray-900"
                       >
                         {isExpanded ? (
                           <ChevronDownIcon className="w-5 h-5" />
@@ -286,7 +286,7 @@ const KeywordGroupTree = () => {
                           <ChevronRightIcon className="w-5 h-5" />
                         )}
                       </button>
-                      <h3 className="text-lg font-semibold text-gray-900">
+                      <h3 className="text-lg font-bold text-gray-900">
                         {group.type === 'product' ? '📦' : group.type === 'collection' ? '📚' : '📝'}{' '}
                         {group.name}
                       </h3>
@@ -295,7 +295,7 @@ const KeywordGroupTree = () => {
                       </Badge>
                     </div>
 
-                    <div className="flex items-center space-x-4 text-sm text-gray-600 mb-3">
+                    <div className="flex items-center space-x-4 text-sm font-medium text-gray-700 mb-3">
                       <span>📊 {keywordCount} keywords</span>
                       <span>Vol total: {totalVolume.toLocaleString()}</span>
                     </div>
@@ -352,10 +352,10 @@ const KeywordGroupTree = () => {
                       ) : (
                         <div
                           key={item.id}
-                          className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded text-sm"
+                          className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded text-sm border border-gray-200"
                         >
-                          <span className="text-gray-700">{item.keyword}</span>
-                          <span className="text-gray-500">vol: {item.volume}</span>
+                          <span className="text-gray-900 font-medium">{item.keyword}</span>
+                          <span className="text-gray-700 font-medium">vol: {item.volume}</span>
                         </div>
                       )
                     ))}

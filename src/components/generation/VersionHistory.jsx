@@ -16,9 +16,9 @@ const VersionHistory = ({ groupId, versions = [], currentVersion, onRestore }) =
   if (!versions || versions.length === 0) {
     return (
       <div className="text-center py-8">
-        <ClockIcon className="w-12 h-12 mx-auto text-gray-400 mb-3" />
-        <p className="text-sm text-gray-500">No hay versiones guardadas aún</p>
-        <p className="text-xs text-gray-400 mt-1">
+        <ClockIcon className="w-12 h-12 mx-auto text-gray-500 mb-3" />
+        <p className="text-sm font-medium text-gray-700">No hay versiones guardadas aún</p>
+        <p className="text-xs text-gray-600 mt-1">
           Las versiones se crean automáticamente al generar o editar contenido
         </p>
       </div>
@@ -127,7 +127,7 @@ const VersionHistory = ({ groupId, versions = [], currentVersion, onRestore }) =
               </div>
               <button
                 onClick={() => setShowPreview(false)}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-600 hover:text-gray-900 text-2xl"
               >
                 ✕
               </button>

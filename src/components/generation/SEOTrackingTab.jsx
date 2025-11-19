@@ -84,7 +84,7 @@ const SEOTrackingTab = ({ group }) => {
   };
 
   const getPositionColor = (position) => {
-    if (!position) return 'text-gray-400';
+    if (!position) return 'text-gray-600';
     if (position <= 3) return 'text-success-600';
     if (position <= 10) return 'text-warning-600';
     return 'text-error-600';
@@ -101,7 +101,7 @@ const SEOTrackingTab = ({ group }) => {
     return (
       <div className="p-8">
         <div className="max-w-2xl mx-auto text-center">
-          <ChartBarIcon className="w-16 h-16 mx-auto text-gray-400 mb-4" />
+          <ChartBarIcon className="w-16 h-16 mx-auto text-gray-500 mb-4" />
           <h3 className="text-xl font-semibold text-gray-900 mb-2">
             No hay datos de SEO disponibles
           </h3>
@@ -189,7 +189,7 @@ const SEOTrackingTab = ({ group }) => {
                   className="flex items-center justify-between bg-white rounded px-3 py-2"
                 >
                   <span className="text-sm font-mono text-gray-700">{redirect.path}</span>
-                  <span className="text-xs text-gray-500">→ URL actual</span>
+                  <span className="text-xs font-medium text-gray-700">→ URL actual</span>
                 </div>
               ))}
             </div>
@@ -265,19 +265,19 @@ const SEOTrackingTab = ({ group }) => {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">
                       Keyword
                     </th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase">
                       Posición
                     </th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase">
                       Clicks
                     </th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase">
                       Impresiones
                     </th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase">
                       CTR
                     </th>
                   </tr>
@@ -329,7 +329,7 @@ const SEOTrackingTab = ({ group }) => {
                         <span className="text-sm font-medium text-gray-900">
                           {kw.keyword}
                         </span>
-                        <span className="text-xs text-gray-500 ml-2">
+                        <span className="text-xs font-medium text-gray-700 ml-2">
                           ({kw.clicks} clicks, pos {kw.position})
                         </span>
                       </div>
@@ -345,7 +345,7 @@ const SEOTrackingTab = ({ group }) => {
         </>
       ) : (
         <div className="text-center py-12">
-          <ChartBarIcon className="w-16 h-16 mx-auto text-gray-400 mb-4" />
+          <ChartBarIcon className="w-16 h-16 mx-auto text-gray-500 mb-4" />
           <p className="text-gray-600 mb-4">No hay datos de SEO disponibles</p>
           <Button variant="primary" onClick={fetchSEOData}>
             Cargar Datos de GSC

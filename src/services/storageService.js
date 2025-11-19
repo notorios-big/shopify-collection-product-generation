@@ -113,16 +113,31 @@ class StorageService {
   }
 
   /**
-   * Actualiza un grupo específico
+   * Actualiza un grupo específico (búsqueda recursiva)
    */
   updateGroup(groupId, updates) {
     const groups = this.getGroups();
-    const index = groups.findIndex((g) => g.id === groupId);
 
-    if (index !== -1) {
-      groups[index] = { ...groups[index], ...updates };
+    // Función recursiva para buscar y actualizar el grupo
+    const updateRecursive = (items) => {
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].id === groupId) {
+          items[i] = { ...items[i], ...updates };
+          return items[i];
+        }
+
+        if (items[i].isGroup && items[i].children) {
+          const found = updateRecursive(items[i].children);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+
+    const updated = updateRecursive(groups);
+    if (updated) {
       this.saveGroups(groups);
-      return groups[index];
+      return updated;
     }
     return null;
   }
@@ -188,13 +203,32 @@ class StorageService {
   }
 
   /**
-   * Elimina un grupo
+   * Elimina un grupo (búsqueda recursiva)
    */
   deleteGroup(groupId) {
     const groups = this.getGroups();
-    const filtered = groups.filter((g) => g.id !== groupId);
-    this.saveGroups(filtered);
-    return filtered;
+
+    // Función recursiva para eliminar el grupo
+    const deleteRecursive = (items) => {
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].id === groupId) {
+          items.splice(i, 1);
+          return true;
+        }
+
+        if (items[i].isGroup && items[i].children) {
+          const deleted = deleteRecursive(items[i].children);
+          if (deleted) return true;
+        }
+      }
+      return false;
+    };
+
+    const deleted = deleteRecursive(groups);
+    if (deleted) {
+      this.saveGroups(groups);
+    }
+    return groups;
   }
 
   /**
