@@ -4,8 +4,10 @@ import { SHOPIFY_API_VERSION } from '../utils/constants';
 class ShopifyService {
   constructor() {
     this.apiVersion = SHOPIFY_API_VERSION;
-    this.endpoint = null;
+    this.storeUrl = null;
     this.accessToken = null;
+    // Backend local para desarrollo (evita CORS)
+    this.backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
   }
 
   /**
@@ -17,7 +19,7 @@ class ShopifyService {
       ? storeUrl
       : `${storeUrl}.myshopify.com`;
 
-    this.endpoint = `https://${normalizedUrl}/admin/api/${this.apiVersion}/graphql.json`;
+    this.storeUrl = normalizedUrl;
     this.accessToken = accessToken;
   }
 
@@ -25,18 +27,20 @@ class ShopifyService {
    * Ejecuta query/mutation de GraphQL
    */
   async graphql(query, variables = {}) {
-    if (!this.endpoint || !this.accessToken) {
+    if (!this.storeUrl || !this.accessToken) {
       throw new Error('Shopify no está configurado. Inicializa con init() primero.');
     }
 
     try {
+      // Usar backend proxy para evitar CORS
       const response = await axios.post(
-        this.endpoint,
+        `${this.backendUrl}/api/shopify/graphql`,
         { query, variables },
         {
           headers: {
             'Content-Type': 'application/json',
-            'X-Shopify-Access-Token': this.accessToken
+            'storeUrl': this.storeUrl,
+            'accessToken': this.accessToken
           }
         }
       );
