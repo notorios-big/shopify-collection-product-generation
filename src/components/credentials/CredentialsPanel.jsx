@@ -36,11 +36,19 @@ const CredentialsPanel = () => {
 
   const testShopifyConnection = async () => {
     setTesting((prev) => ({ ...prev, shopify: true }));
+    setErrors((prev) => ({ ...prev, shopify: null }));
     try {
-      shopifyService.init(formData.shopify.storeUrl, formData.shopify.accessToken);
+      shopifyService.init(
+        formData.shopify.storeUrl,
+        formData.shopify.accessToken,
+        formData.shopify.apiVersion || '2025-01'
+      );
       const result = await shopifyService.testConnection();
 
       handleChange('shopify', 'status', result.success ? 'connected' : 'error');
+      if (result.success) {
+        alert(result.message);
+      }
       setErrors((prev) => ({
         ...prev,
         shopify: result.success ? null : result.error
@@ -158,9 +166,19 @@ const CredentialsPanel = () => {
             onChange={(e) => handleChange('shopify', 'accessToken', e.target.value)}
           />
 
-          <div className="text-sm text-gray-600">
-            <span className="font-medium">API Version:</span> 2025-10 (latest stable)
-          </div>
+          <Input
+            label="API Version"
+            placeholder="2025-01"
+            value={formData.shopify?.apiVersion || '2025-01'}
+            onChange={(e) => handleChange('shopify', 'apiVersion', e.target.value)}
+            helperText="Formato: YYYY-MM (ej: 2025-01, 2024-10). Usa una versión estable."
+          />
+
+          {errors.shopify && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-700 whitespace-pre-wrap">{errors.shopify}</p>
+            </div>
+          )}
 
           <Button
             variant="outline"

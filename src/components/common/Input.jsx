@@ -5,6 +5,7 @@ export const Input = ({
   onChange,
   placeholder,
   error,
+  helperText,
   disabled = false,
   icon: Icon,
   rightIcon: RightIcon,
@@ -36,9 +37,9 @@ export const Input = ({
             ${Icon ? 'pl-10' : 'pl-3'}
             ${RightIcon ? 'pr-10' : 'pr-3'}
             py-2
-            focus:ring-2 focus:ring-primary-500 focus:border-transparent
+            focus:ring-2 focus:ring-blue-500 focus:border-transparent
             disabled:bg-gray-100 disabled:cursor-not-allowed
-            ${error ? 'border-error-500' : 'border-gray-300'}
+            ${error ? 'border-red-500' : 'border-gray-300'}
           `}
           {...props}
         />
@@ -53,7 +54,8 @@ export const Input = ({
           </div>
         )}
       </div>
-      {error && <p className="mt-1 text-sm text-error-600">{error}</p>}
+      {helperText && !error && <p className="mt-1 text-xs text-gray-500">{helperText}</p>}
+      {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
     </div>
   );
 };

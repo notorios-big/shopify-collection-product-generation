@@ -6,18 +6,51 @@ class ShopifyService {
     this.apiVersion = SHOPIFY_API_VERSION;
     this.endpoint = null;
     this.accessToken = null;
+    this.storeUrl = null;
+    this.useProxy = true; // Usar proxy por defecto en desarrollo
+  }
+
+  /**
+   * Cambia la versión de la API
+   */
+  setApiVersion(version) {
+    this.apiVersion = version;
+    // Reconstruir endpoint si ya estaba inicializado
+    if (this.storeUrl) {
+      this._buildEndpoint();
+    }
+  }
+
+  /**
+   * Construye el endpoint correcto (proxy o directo)
+   */
+  _buildEndpoint() {
+    if (this.useProxy && import.meta.env.DEV) {
+      // En desarrollo, usar el proxy de Vite
+      this.endpoint = `/api/shopify/admin/api/${this.apiVersion}/graphql.json`;
+    } else {
+      // En producción, llamada directa (requiere backend propio)
+      this.endpoint = `https://${this.storeUrl}/admin/api/${this.apiVersion}/graphql.json`;
+    }
   }
 
   /**
    * Inicializa servicio con credenciales
    */
-  init(storeUrl, accessToken) {
+  init(storeUrl, accessToken, apiVersion = null) {
     // Normalizar URL de la tienda
-    const normalizedUrl = storeUrl.includes('.myshopify.com')
+    this.storeUrl = storeUrl.includes('.myshopify.com')
       ? storeUrl
       : `${storeUrl}.myshopify.com`;
 
-    this.endpoint = `https://${normalizedUrl}/admin/api/${this.apiVersion}/graphql.json`;
+    // Limpiar posibles https:// o barras
+    this.storeUrl = this.storeUrl.replace(/^https?:\/\//, '').replace(/\/+$/, '');
+
+    if (apiVersion) {
+      this.apiVersion = apiVersion;
+    }
+
+    this._buildEndpoint();
     this.accessToken = accessToken;
   }
 
@@ -30,24 +63,63 @@ class ShopifyService {
     }
 
     try {
+      const headers = {
+        'Content-Type': 'application/json',
+        'X-Shopify-Access-Token': this.accessToken
+      };
+
+      // Agregar header para el proxy dinámico
+      if (this.useProxy && import.meta.env.DEV) {
+        headers['X-Shopify-Store'] = this.storeUrl;
+      }
+
       const response = await axios.post(
         this.endpoint,
         { query, variables },
         {
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Shopify-Access-Token': this.accessToken
-          }
+          headers,
+          timeout: 30000 // 30 segundos timeout
         }
       );
 
       if (response.data.errors) {
-        throw new Error(response.data.errors[0].message);
+        const errorMessage = response.data.errors.map(e => e.message).join(', ');
+        throw new Error(errorMessage);
       }
 
       return response.data.data;
     } catch (error) {
       console.error('Shopify GraphQL Error:', error);
+
+      // Mejorar mensajes de error
+      if (error.code === 'ERR_NETWORK' || error.message === 'Network Error') {
+        throw new Error(
+          `Error de red: No se puede conectar a Shopify. ` +
+          `Esto puede deberse a:\n` +
+          `• CORS: Las llamadas directas desde el browser a Shopify Admin API están bloqueadas.\n` +
+          `• URL incorrecta: Verifica que "${this.storeUrl}" sea correcta.\n` +
+          `• Token inválido: Verifica que el Access Token tenga los permisos necesarios.\n\n` +
+          `💡 Solución: Esta app requiere un servidor backend o proxy para conectar con Shopify.`
+        );
+      }
+
+      if (error.response) {
+        const status = error.response.status;
+        const data = error.response.data;
+
+        if (status === 401) {
+          throw new Error('Token de acceso inválido o expirado. Verifica tu Admin API Access Token.');
+        }
+        if (status === 403) {
+          throw new Error('Acceso denegado. El token no tiene permisos suficientes para esta operación.');
+        }
+        if (status === 404) {
+          throw new Error(`Tienda no encontrada. Verifica que "${this.storeUrl}" sea correcta y la versión de API "${this.apiVersion}" exista.`);
+        }
+
+        throw new Error(`Error ${status}: ${JSON.stringify(data)}`);
+      }
+
       throw new Error(`Error de Shopify: ${error.message}`);
     }
   }
@@ -63,6 +135,9 @@ class ShopifyService {
             name
             url
             currencyCode
+            plan {
+              displayName
+            }
           }
         }
       `;
@@ -70,7 +145,8 @@ class ShopifyService {
       const data = await this.graphql(query);
       return {
         success: true,
-        shop: data.shop
+        shop: data.shop,
+        message: `✅ Conectado a: ${data.shop.name} (${data.shop.plan?.displayName || 'Plan básico'})`
       };
     } catch (error) {
       return {
