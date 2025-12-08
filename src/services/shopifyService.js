@@ -7,7 +7,6 @@ class ShopifyService {
     this.endpoint = null;
     this.accessToken = null;
     this.storeUrl = null;
-    this.useProxy = true; // Usar proxy por defecto en desarrollo
   }
 
   /**
@@ -15,21 +14,7 @@ class ShopifyService {
    */
   setApiVersion(version) {
     this.apiVersion = version;
-    // Reconstruir endpoint si ya estaba inicializado
     if (this.storeUrl) {
-      this._buildEndpoint();
-    }
-  }
-
-  /**
-   * Construye el endpoint correcto (proxy o directo)
-   */
-  _buildEndpoint() {
-    if (this.useProxy && import.meta.env.DEV) {
-      // En desarrollo, usar el proxy de Vite
-      this.endpoint = `/api/shopify/admin/api/${this.apiVersion}/graphql.json`;
-    } else {
-      // En producción, llamada directa (requiere backend propio)
       this.endpoint = `https://${this.storeUrl}/admin/api/${this.apiVersion}/graphql.json`;
     }
   }
@@ -50,7 +35,7 @@ class ShopifyService {
       this.apiVersion = apiVersion;
     }
 
-    this._buildEndpoint();
+    this.endpoint = `https://${this.storeUrl}/admin/api/${this.apiVersion}/graphql.json`;
     this.accessToken = accessToken;
   }
 
@@ -63,22 +48,15 @@ class ShopifyService {
     }
 
     try {
-      const headers = {
-        'Content-Type': 'application/json',
-        'X-Shopify-Access-Token': this.accessToken
-      };
-
-      // Agregar header para el proxy dinámico
-      if (this.useProxy && import.meta.env.DEV) {
-        headers['X-Shopify-Store'] = this.storeUrl;
-      }
-
       const response = await axios.post(
         this.endpoint,
         { query, variables },
         {
-          headers,
-          timeout: 30000 // 30 segundos timeout
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Shopify-Access-Token': this.accessToken
+          },
+          timeout: 30000
         }
       );
 

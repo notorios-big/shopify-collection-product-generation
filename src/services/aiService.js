@@ -76,7 +76,7 @@ class AIService {
         return await this.callAnthropic(config, prompt, apiKey);
       }
 
-      if (provider === AI_PROVIDERS.GEMINI20FLASH) {
+      if (provider === AI_PROVIDERS.GEMINI25PRO) {
         return await this.callGemini(config, prompt, apiKey);
       }
     } catch (error) {
@@ -139,7 +139,7 @@ class AIService {
   }
 
   /**
-   * Llamada a Google Gemini
+   * Llamada a Google Gemini 2.5 Pro
    */
   async callGemini(config, prompt, apiKey) {
     // Usar proxy en desarrollo para evitar CORS
@@ -147,7 +147,7 @@ class AIService {
       ? '/api/google-ai'
       : 'https://generativelanguage.googleapis.com';
 
-    const endpoint = `${baseUrl}/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+    const endpoint = `${baseUrl}/v1beta/models/gemini-2.5-pro-preview-05-06:generateContent?key=${apiKey}`;
 
     const response = await axios.post(
       endpoint,
@@ -163,7 +163,7 @@ class AIService {
       }
     );
 
-    return { data: response.data, provider: AI_PROVIDERS.GEMINI20FLASH };
+    return { data: response.data, provider: AI_PROVIDERS.GEMINI25PRO };
   }
 
   /**
@@ -181,7 +181,7 @@ class AIService {
         return JSON.parse(content);
       }
 
-      if (provider === AI_PROVIDERS.GEMINI20FLASH) {
+      if (provider === AI_PROVIDERS.GEMINI25PRO) {
         const content = response.data.candidates[0].content.parts[0].text;
         return JSON.parse(content);
       }
