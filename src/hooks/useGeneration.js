@@ -16,11 +16,11 @@ export const useGeneration = () => {
       const selectedModel = credentials.selectedAIModel;
       let apiKey;
 
-      if (selectedModel === 'gpt-5') {
+      if (selectedModel === 'gpt-4') {
         apiKey = credentials.openai.apiKey;
       } else if (selectedModel === 'claude-4-5') {
         apiKey = credentials.anthropic.apiKey;
-      } else if (selectedModel === 'gemini-2.5-pro') {
+      } else if (selectedModel === 'gemini-3-pro') {
         apiKey = credentials.google.apiKey;
       }
 
