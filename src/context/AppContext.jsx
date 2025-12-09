@@ -24,10 +24,11 @@ export const AppProvider = ({ children }) => {
     loadData();
   }, []);
 
-  const loadData = () => {
+  const loadData = async () => {
     setIsLoading(true);
     try {
-      const creds = storageService.getCredentials();
+      // Cargar credenciales desde archivo (async) o localStorage (fallback)
+      const creds = await storageService.loadCredentials();
       const prpts = storageService.getPrompts();
       const grps = storageService.getGroups();
 
@@ -36,6 +37,10 @@ export const AppProvider = ({ children }) => {
       setGroups(grps);
     } catch (error) {
       console.error('Error cargando datos:', error);
+      // Usar valores por defecto en caso de error
+      setCredentials(storageService.getDefaultCredentials());
+      setPrompts(storageService.getPrompts());
+      setGroups([]);
     } finally {
       setIsLoading(false);
     }

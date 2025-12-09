@@ -1,9 +1,11 @@
+import axios from 'axios';
 import CryptoJS from 'crypto-js';
 import { LOCAL_STORAGE_KEYS, DEFAULT_PROMPTS, SHOPIFY_API_VERSION } from '../utils/constants';
 
 class StorageService {
   constructor() {
     this.encryptionKey = this.getOrCreateKey();
+    this.credentialsCache = null;
   }
 
   /**
@@ -39,20 +41,89 @@ class StorageService {
   }
 
   /**
-   * Guarda credenciales (encriptadas)
+   * Guarda credenciales (en archivo via backend + localStorage como backup)
    */
-  saveCredentials(credentials) {
+  async saveCredentials(credentials) {
+    // Guardar en localStorage como backup
     const encrypted = this.encrypt(credentials);
     localStorage.setItem(LOCAL_STORAGE_KEYS.CREDENTIALS, encrypted);
+
+    // Intentar guardar en archivo via backend
+    try {
+      await axios.post('/api/credentials', { credentials });
+      console.log('[Storage] Credentials saved to file');
+    } catch (error) {
+      console.warn('[Storage] Could not save to file, using localStorage only:', error.message);
+    }
+
+    // Actualizar cache
+    this.credentialsCache = credentials;
   }
 
   /**
-   * Obtiene credenciales (desencriptadas)
+   * Guarda credenciales (versión síncrona para compatibilidad)
+   */
+  saveCredentialsSync(credentials) {
+    const encrypted = this.encrypt(credentials);
+    localStorage.setItem(LOCAL_STORAGE_KEYS.CREDENTIALS, encrypted);
+    this.credentialsCache = credentials;
+
+    // Fire and forget - intentar guardar en archivo
+    axios.post('/api/credentials', { credentials }).catch(() => {});
+  }
+
+  /**
+   * Obtiene credenciales (intenta archivo primero, luego localStorage)
+   */
+  async loadCredentials() {
+    // Intentar cargar desde archivo via backend
+    try {
+      const response = await axios.get('/api/credentials');
+      if (response.data.success && response.data.credentials) {
+        console.log('[Storage] Credentials loaded from file');
+        this.credentialsCache = response.data.credentials;
+        return response.data.credentials;
+      }
+    } catch (error) {
+      console.warn('[Storage] Could not load from file:', error.message);
+    }
+
+    // Fallback a localStorage
+    const encrypted = localStorage.getItem(LOCAL_STORAGE_KEYS.CREDENTIALS);
+    if (encrypted) {
+      const decrypted = this.decrypt(encrypted);
+      if (decrypted) {
+        console.log('[Storage] Credentials loaded from localStorage');
+        this.credentialsCache = decrypted;
+        return decrypted;
+      }
+    }
+
+    // Devolver credenciales por defecto
+    console.log('[Storage] Using default credentials');
+    return this.getDefaultCredentials();
+  }
+
+  /**
+   * Obtiene credenciales (versión síncrona - usa cache o localStorage)
    */
   getCredentials() {
+    // Si hay cache, usarla
+    if (this.credentialsCache) {
+      return this.credentialsCache;
+    }
+
+    // Intentar localStorage
     const encrypted = localStorage.getItem(LOCAL_STORAGE_KEYS.CREDENTIALS);
-    if (!encrypted) return this.getDefaultCredentials();
-    return this.decrypt(encrypted) || this.getDefaultCredentials();
+    if (encrypted) {
+      const decrypted = this.decrypt(encrypted);
+      if (decrypted) {
+        this.credentialsCache = decrypted;
+        return decrypted;
+      }
+    }
+
+    return this.getDefaultCredentials();
   }
 
   /**
@@ -214,6 +285,7 @@ class StorageService {
     localStorage.removeItem(LOCAL_STORAGE_KEYS.CREDENTIALS);
     localStorage.removeItem(LOCAL_STORAGE_KEYS.PROMPTS);
     localStorage.removeItem(LOCAL_STORAGE_KEYS.GROUPS);
+    this.credentialsCache = null;
   }
 
   /**
@@ -232,7 +304,7 @@ class StorageService {
    * Importa datos (restore)
    */
   importData(data) {
-    if (data.credentials) this.saveCredentials(data.credentials);
+    if (data.credentials) this.saveCredentialsSync(data.credentials);
     if (data.prompts) this.savePrompts(data.prompts);
     if (data.groups) this.saveGroups(data.groups);
   }
