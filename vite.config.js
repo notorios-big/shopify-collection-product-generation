@@ -7,8 +7,8 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      // Proxy al backend Express para Shopify
-      '/api/shopify': {
+      // Proxy al backend Express
+      '/api': {
         target: 'http://localhost:3001',
         changeOrigin: true
       },
