@@ -1,5 +1,5 @@
 import CryptoJS from 'crypto-js';
-import { LOCAL_STORAGE_KEYS, DEFAULT_PROMPTS } from '../utils/constants';
+import { LOCAL_STORAGE_KEYS, DEFAULT_PROMPTS, SHOPIFY_API_VERSION } from '../utils/constants';
 
 class StorageService {
   constructor() {
@@ -68,7 +68,7 @@ class StorageService {
       shopify: {
         storeUrl: '',
         accessToken: '',
-        apiVersion: '2025-10',
+        apiVersion: SHOPIFY_API_VERSION,
         status: 'unconfigured'
       },
       gsc: {
