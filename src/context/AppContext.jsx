@@ -25,6 +25,7 @@ export const AppProvider = ({ children }) => {
   }, []);
 
   const loadData = async () => {
+    console.log('🔄 [AppContext] Cargando datos...');
     setIsLoading(true);
     try {
       // Cargar credenciales desde archivo (async) o localStorage (fallback)
@@ -32,24 +33,36 @@ export const AppProvider = ({ children }) => {
       const prpts = storageService.getPrompts();
       const grps = storageService.getGroups();
 
+      console.log('📦 [AppContext] Credenciales cargadas:', {
+        hasGoogle: !!creds?.google,
+        googleKey: creds?.google?.apiKey ? `${creds.google.apiKey.substring(0, 8)}...` : 'NO KEY',
+        selectedModel: creds?.selectedAIModel
+      });
+
       setCredentials(creds);
       setPrompts(prpts);
       setGroups(grps);
     } catch (error) {
-      console.error('Error cargando datos:', error);
+      console.error('❌ [AppContext] Error cargando datos:', error);
       // Usar valores por defecto en caso de error
       setCredentials(storageService.getDefaultCredentials());
       setPrompts(storageService.getPrompts());
       setGroups([]);
     } finally {
       setIsLoading(false);
+      console.log('✅ [AppContext] Datos cargados');
     }
   };
 
   // Guardar credenciales
-  const saveCredentials = (newCredentials) => {
-    storageService.saveCredentials(newCredentials);
+  const saveCredentials = async (newCredentials) => {
+    console.log('💾 [AppContext] Guardando credenciales:', {
+      hasGoogle: !!newCredentials?.google,
+      googleKey: newCredentials?.google?.apiKey ? `${newCredentials.google.apiKey.substring(0, 8)}...` : 'NO KEY'
+    });
+    await storageService.saveCredentials(newCredentials);
     setCredentials(newCredentials);
+    console.log('✅ [AppContext] Credenciales guardadas y estado actualizado');
   };
 
   // Guardar prompts
