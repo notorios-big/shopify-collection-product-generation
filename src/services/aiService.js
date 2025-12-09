@@ -68,7 +68,7 @@ class AIService {
     }
 
     try {
-      if (provider === AI_PROVIDERS.GPT5) {
+      if (provider === AI_PROVIDERS.GPT4) {
         return await this.callOpenAI(config, prompt, apiKey);
       }
 
@@ -76,7 +76,7 @@ class AIService {
         return await this.callAnthropic(config, prompt, apiKey);
       }
 
-      if (provider === AI_PROVIDERS.GEMINI25PRO) {
+      if (provider === AI_PROVIDERS.GEMINI3PRO) {
         return await this.callGemini(config, prompt, apiKey);
       }
     } catch (error) {
@@ -111,7 +111,7 @@ class AIService {
       }
     );
 
-    return { data: response.data, provider: AI_PROVIDERS.GPT5 };
+    return { data: response.data, provider: AI_PROVIDERS.GPT4 };
   }
 
   /**
@@ -139,15 +139,22 @@ class AIService {
   }
 
   /**
-   * Llamada a Google Gemini
+   * Llamada a Google Gemini 3 Pro Preview
    */
   async callGemini(config, prompt, apiKey) {
+    // Usar proxy en desarrollo para evitar CORS
+    const baseUrl = import.meta.env.DEV
+      ? '/api/google-ai'
+      : 'https://generativelanguage.googleapis.com';
+
+    const endpoint = `${baseUrl}/v1beta/models/gemini-3-pro-preview:generateContent?key=${apiKey}`;
+
     const response = await axios.post(
-      `${config.endpoint}?key=${apiKey}`,
+      endpoint,
       {
         contents: [{ parts: [{ text: prompt }] }],
         generationConfig: {
-          response_mime_type: 'application/json',
+          responseMimeType: 'application/json',
           temperature: 0.7
         }
       },
@@ -156,7 +163,7 @@ class AIService {
       }
     );
 
-    return { data: response.data, provider: AI_PROVIDERS.GEMINI25PRO };
+    return { data: response.data, provider: AI_PROVIDERS.GEMINI3PRO };
   }
 
   /**
@@ -164,7 +171,7 @@ class AIService {
    */
   parseResponse(response, provider) {
     try {
-      if (provider === AI_PROVIDERS.GPT5) {
+      if (provider === AI_PROVIDERS.GPT4) {
         const content = response.data.choices[0].message.content;
         return JSON.parse(content);
       }
@@ -174,7 +181,7 @@ class AIService {
         return JSON.parse(content);
       }
 
-      if (provider === AI_PROVIDERS.GEMINI25PRO) {
+      if (provider === AI_PROVIDERS.GEMINI3PRO) {
         const content = response.data.candidates[0].content.parts[0].text;
         return JSON.parse(content);
       }
