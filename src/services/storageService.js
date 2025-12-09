@@ -131,9 +131,7 @@ class StorageService {
    */
   getDefaultCredentials() {
     return {
-      selectedAIModel: 'claude-4-5',
-      openai: { apiKey: '', status: 'unconfigured' },
-      anthropic: { apiKey: '', status: 'unconfigured' },
+      selectedAIModel: 'gemini',
       google: { apiKey: '', status: 'unconfigured' },
       nanoBanana: { apiKey: '', status: 'unconfigured' },
       shopify: {

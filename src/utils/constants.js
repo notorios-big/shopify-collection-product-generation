@@ -1,26 +1,11 @@
 // Constantes de la aplicación
 
 export const AI_PROVIDERS = {
-  GPT4: 'gpt-4',
-  CLAUDE45: 'claude-4-5',
-  GEMINI3PRO: 'gemini-3-pro'
+  GEMINI: 'gemini'
 };
 
 export const AI_PROVIDER_CONFIG = {
-  [AI_PROVIDERS.GPT4]: {
-    name: 'GPT-4o',
-    provider: 'OpenAI',
-    endpoint: 'https://api.openai.com/v1/chat/completions',
-    model: 'gpt-4o'
-  },
-  [AI_PROVIDERS.CLAUDE45]: {
-    name: 'Claude Sonnet 4',
-    provider: 'Anthropic',
-    endpoint: 'https://api.anthropic.com/v1/messages',
-    model: 'claude-sonnet-4-20250514',
-    version: '2023-06-01'
-  },
-  [AI_PROVIDERS.GEMINI3PRO]: {
+  [AI_PROVIDERS.GEMINI]: {
     name: 'Gemini 3 Pro Preview',
     provider: 'Google',
     endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-preview:generateContent',
