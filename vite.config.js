@@ -5,7 +5,13 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   server: {
+    port: 5173,
     proxy: {
+      // Proxy al backend Express para Shopify
+      '/api/shopify': {
+        target: 'http://localhost:3001',
+        changeOrigin: true
+      },
       // Proxy para Google AI APIs (Gemini)
       '/api/google-ai': {
         target: 'https://generativelanguage.googleapis.com',

@@ -4,9 +4,10 @@ import { SHOPIFY_API_VERSION } from '../utils/constants';
 class ShopifyService {
   constructor() {
     this.apiVersion = SHOPIFY_API_VERSION;
-    this.endpoint = null;
     this.accessToken = null;
     this.storeUrl = null;
+    // Usar proxy backend
+    this.proxyEndpoint = '/api/shopify/graphql';
   }
 
   /**
@@ -14,9 +15,6 @@ class ShopifyService {
    */
   setApiVersion(version) {
     this.apiVersion = version;
-    if (this.storeUrl) {
-      this.endpoint = `https://${this.storeUrl}/admin/api/${this.apiVersion}/graphql.json`;
-    }
   }
 
   /**
@@ -35,27 +33,29 @@ class ShopifyService {
       this.apiVersion = apiVersion;
     }
 
-    this.endpoint = `https://${this.storeUrl}/admin/api/${this.apiVersion}/graphql.json`;
     this.accessToken = accessToken;
   }
 
   /**
-   * Ejecuta query/mutation de GraphQL
+   * Ejecuta query/mutation de GraphQL via proxy backend
    */
   async graphql(query, variables = {}) {
-    if (!this.endpoint || !this.accessToken) {
+    if (!this.storeUrl || !this.accessToken) {
       throw new Error('Shopify no está configurado. Inicializa con init() primero.');
     }
 
     try {
       const response = await axios.post(
-        this.endpoint,
-        { query, variables },
+        this.proxyEndpoint,
         {
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Shopify-Access-Token': this.accessToken
-          },
+          storeUrl: this.storeUrl,
+          accessToken: this.accessToken,
+          apiVersion: this.apiVersion,
+          query,
+          variables
+        },
+        {
+          headers: { 'Content-Type': 'application/json' },
           timeout: 30000
         }
       );
@@ -69,15 +69,11 @@ class ShopifyService {
     } catch (error) {
       console.error('Shopify GraphQL Error:', error);
 
-      // Mejorar mensajes de error
+      // Error de conexión al proxy backend
       if (error.code === 'ERR_NETWORK' || error.message === 'Network Error') {
         throw new Error(
-          `Error de red: No se puede conectar a Shopify. ` +
-          `Esto puede deberse a:\n` +
-          `• CORS: Las llamadas directas desde el browser a Shopify Admin API están bloqueadas.\n` +
-          `• URL incorrecta: Verifica que "${this.storeUrl}" sea correcta.\n` +
-          `• Token inválido: Verifica que el Access Token tenga los permisos necesarios.\n\n` +
-          `💡 Solución: Esta app requiere un servidor backend o proxy para conectar con Shopify.`
+          `Error de red: No se puede conectar al servidor proxy.\n` +
+          `Asegúrate de que el servidor backend esté corriendo (npm run dev).`
         );
       }
 
@@ -95,10 +91,15 @@ class ShopifyService {
           throw new Error(`Tienda no encontrada. Verifica que "${this.storeUrl}" sea correcta y la versión de API "${this.apiVersion}" exista.`);
         }
 
+        // Error del proxy con detalles de Shopify
+        if (data?.error) {
+          throw new Error(`Error de Shopify: ${JSON.stringify(data.error)}`);
+        }
+
         throw new Error(`Error ${status}: ${JSON.stringify(data)}`);
       }
 
-      throw new Error(`Error de Shopify: ${error.message}`);
+      throw new Error(`Error: ${error.message}`);
     }
   }
 
