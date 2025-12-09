@@ -7,17 +7,17 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      // Proxy al backend Express
-      '/api': {
-        target: 'http://localhost:3001',
-        changeOrigin: true
-      },
-      // Proxy para Google AI APIs (Gemini)
+      // Proxy para Google AI APIs (Gemini) - DEBE IR PRIMERO (más específico)
       '/api/google-ai': {
         target: 'https://generativelanguage.googleapis.com',
         changeOrigin: true,
         secure: true,
         rewrite: (path) => path.replace(/^\/api\/google-ai/, '')
+      },
+      // Proxy al backend Express
+      '/api': {
+        target: 'http://localhost:3001',
+        changeOrigin: true
       }
     }
   }
