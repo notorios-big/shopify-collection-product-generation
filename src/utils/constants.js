@@ -3,7 +3,7 @@
 export const AI_PROVIDERS = {
   GPT4: 'gpt-4',
   CLAUDE45: 'claude-4-5',
-  GEMINI25PRO: 'gemini-2.5-pro'
+  GEMINI3PRO: 'gemini-3-pro'
 };
 
 export const AI_PROVIDER_CONFIG = {
@@ -20,11 +20,11 @@ export const AI_PROVIDER_CONFIG = {
     model: 'claude-sonnet-4-20250514',
     version: '2023-06-01'
   },
-  [AI_PROVIDERS.GEMINI25PRO]: {
-    name: 'Gemini 2.5 Pro',
+  [AI_PROVIDERS.GEMINI3PRO]: {
+    name: 'Gemini 3 Pro Preview',
     provider: 'Google',
-    endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro-preview-05-06:generateContent',
-    model: 'gemini-2.5-pro-preview-05-06'
+    endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-preview:generateContent',
+    model: 'gemini-3-pro-preview'
   }
 };
 
