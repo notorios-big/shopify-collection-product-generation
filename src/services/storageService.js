@@ -1,6 +1,6 @@
 import axios from 'axios';
 import CryptoJS from 'crypto-js';
-import { LOCAL_STORAGE_KEYS, DEFAULT_PROMPTS, SHOPIFY_API_VERSION } from '../utils/constants';
+import { LOCAL_STORAGE_KEYS, DEFAULT_PROMPTS, SHOPIFY_API_VERSION, DEFAULT_NICHE_DESCRIPTION } from '../utils/constants';
 
 class StorageService {
   constructor() {
@@ -175,6 +175,21 @@ class StorageService {
   getPrompts() {
     const prompts = localStorage.getItem(LOCAL_STORAGE_KEYS.PROMPTS);
     return prompts ? JSON.parse(prompts) : DEFAULT_PROMPTS;
+  }
+
+  /**
+   * Guarda descripción del nicho
+   */
+  saveNicheDescription(description) {
+    localStorage.setItem(LOCAL_STORAGE_KEYS.NICHE_DESCRIPTION, description);
+  }
+
+  /**
+   * Obtiene descripción del nicho
+   */
+  getNicheDescription() {
+    const description = localStorage.getItem(LOCAL_STORAGE_KEYS.NICHE_DESCRIPTION);
+    return description || DEFAULT_NICHE_DESCRIPTION;
   }
 
   /**

@@ -5,7 +5,7 @@ import { Button } from '../common/Button';
 import { Badge } from '../common/Badge';
 import gscService from '../../services/gscService';
 import { formatNumber, formatPercentage } from '../../utils/formatters';
-import { ArrowPathIcon, ChartBarIcon } from '@heroicons/react/24/outline';
+import { ArrowPathIcon, ChartBarIcon, TagIcon } from '@heroicons/react/24/outline';
 
 const SEOTrackingTab = ({ group }) => {
   const { credentials } = useApp();
@@ -18,6 +18,12 @@ const SEOTrackingTab = ({ group }) => {
 
   const hasShopifyLink = group.generated?.shopifyId && group.generated?.shopifyUrl;
   const isGSCConfigured = credentials?.gsc?.clientId && credentials?.gsc?.clientSecret;
+
+  // Obtener keywords del grupo (pueden venir del grupo o del contenido generado)
+  const groupKeywords = group.generated?.keywords || group.children?.map(k => ({
+    keyword: k.keyword,
+    volume: k.volume || 0
+  })) || [];
 
   useEffect(() => {
     if (hasShopifyLink && isGSCConfigured) {
@@ -47,28 +53,27 @@ const SEOTrackingTab = ({ group }) => {
         throw new Error('Error autenticando con Google Search Console');
       }
 
-      // Obtener keywords del grupo
-      const keywords = group.children?.map(k => k.keyword) || [];
-
       // URLs para consultar (actual + redirects)
       const urls = [
         group.generated.shopifyUrl,
-        ...redirectsResult.redirects.map(r => r.path)
+        ...(redirectsResult.redirects?.map(r => r.path) || [])
       ];
 
-      // Obtener datos consolidados
+      // Obtener datos consolidados usando las keywords con sus volúmenes
       const consolidated = await gscService.getConsolidatedData(
         credentials.gsc.siteUrl,
         urls,
-        keywords
+        groupKeywords,
+        30
       );
 
       // Buscar keywords faltantes
+      const keywordStrings = groupKeywords.map(k => k.keyword);
       const missingKeywords = await gscService.findMissingKeywords(
         credentials.gsc.siteUrl,
         group.generated.shopifyUrl,
-        keywords,
-        group.generated.bodyHtml
+        keywordStrings,
+        group.generated.bodyHtml || ''
       );
 
       setSeoData({
@@ -97,10 +102,66 @@ const SEOTrackingTab = ({ group }) => {
     return '🔴';
   };
 
+  const getPositionBadge = (position) => {
+    if (!position) return 'secondary';
+    if (position <= 3) return 'success';
+    if (position <= 10) return 'warning';
+    return 'error';
+  };
+
+  // Renderizar sección de keywords del grupo (siempre visible)
+  const renderGroupKeywords = () => (
+    <div className="mb-6">
+      <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+        <TagIcon className="w-5 h-5 text-primary-500" />
+        Keywords del Grupo
+      </h3>
+      <div className="bg-gray-50 rounded-lg p-4">
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-sm text-gray-600">
+            {groupKeywords.length} keywords · {formatNumber(groupKeywords.reduce((sum, k) => sum + (k.volume || 0), 0))} búsquedas/mes totales
+          </span>
+          {group.generated?.mainKeyword && (
+            <Badge variant="primary">
+              Principal: {group.generated.mainKeyword}
+            </Badge>
+          )}
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+          {groupKeywords.sort((a, b) => (b.volume || 0) - (a.volume || 0)).map((kw, idx) => (
+            <div
+              key={idx}
+              className={`flex items-center justify-between px-3 py-2 rounded-lg ${
+                idx === 0 ? 'bg-primary-100 border border-primary-200' : 'bg-white border border-gray-200'
+              }`}
+            >
+              <span className={`text-sm ${idx === 0 ? 'font-medium text-primary-800' : 'text-gray-700'}`}>
+                {kw.keyword}
+              </span>
+              <span className={`text-xs px-2 py-0.5 rounded-full ${
+                idx === 0
+                  ? 'bg-primary-200 text-primary-800'
+                  : 'bg-gray-100 text-gray-600'
+              }`}>
+                {formatNumber(kw.volume || 0)}
+              </span>
+            </div>
+          ))}
+        </div>
+        {groupKeywords.length === 0 && (
+          <p className="text-sm text-gray-500 text-center py-4">
+            No hay keywords asociadas a este grupo
+          </p>
+        )}
+      </div>
+    </div>
+  );
+
   if (!hasShopifyLink) {
     return (
-      <div className="p-8">
-        <div className="max-w-2xl mx-auto text-center">
+      <div className="p-6">
+        {renderGroupKeywords()}
+        <div className="max-w-2xl mx-auto text-center mt-8">
           <ChartBarIcon className="w-16 h-16 mx-auto text-gray-400 mb-4" />
           <h3 className="text-xl font-semibold text-gray-900 mb-2">
             No hay datos de SEO disponibles
@@ -119,11 +180,12 @@ const SEOTrackingTab = ({ group }) => {
 
   if (!isGSCConfigured) {
     return (
-      <div className="p-8">
-        <div className="max-w-2xl mx-auto">
+      <div className="p-6">
+        {renderGroupKeywords()}
+        <div className="max-w-2xl mx-auto mt-8">
           <div className="bg-warning-50 border border-warning-200 rounded-lg p-6">
             <h3 className="text-lg font-semibold text-warning-900 mb-2">
-              ⚠️ Google Search Console no configurado
+              Google Search Console no configurado
             </h3>
             <p className="text-warning-700 mb-4">
               Para usar el tracking SEO, necesitas configurar las credenciales de Google Search Console.
@@ -139,10 +201,13 @@ const SEOTrackingTab = ({ group }) => {
 
   return (
     <div className="p-6 space-y-6">
+      {/* Keywords del grupo */}
+      {renderGroupKeywords()}
+
       {/* Información de Shopify */}
       <div>
         <h3 className="text-lg font-semibold text-gray-900 mb-3">
-          🔗 Información de Shopify
+          Información de Shopify
         </h3>
         <div className="bg-gray-50 rounded-lg p-4 space-y-2">
           <div className="flex items-center justify-between">
@@ -175,11 +240,11 @@ const SEOTrackingTab = ({ group }) => {
       {redirects.length > 0 && (
         <div>
           <h3 className="text-lg font-semibold text-gray-900 mb-3">
-            🔀 Historial de Redirecciones
+            Historial de Redirecciones
           </h3>
           <div className="bg-primary-50 border border-primary-200 rounded-lg p-4">
             <p className="text-sm text-primary-700 mb-3">
-              💡 Se encontraron {redirects.length} redirecciones. Los datos SEO se consolidan
+              Se encontraron {redirects.length} redirecciones. Los datos SEO se consolidan
               desde todas estas URLs.
             </p>
             <div className="space-y-2">
@@ -205,7 +270,7 @@ const SEOTrackingTab = ({ group }) => {
         </div>
       ) : error ? (
         <div className="bg-error-50 border border-error-200 rounded-lg p-4">
-          <p className="text-error-700">❌ Error: {error}</p>
+          <p className="text-error-700">Error: {error}</p>
           <Button
             variant="outline"
             size="sm"
@@ -221,7 +286,7 @@ const SEOTrackingTab = ({ group }) => {
           <div>
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-lg font-semibold text-gray-900">
-                📈 Posicionamiento de Keywords
+                Posicionamiento de Keywords
               </h3>
               <Button
                 variant="ghost"
@@ -260,13 +325,19 @@ const SEOTrackingTab = ({ group }) => {
               </div>
             </div>
 
-            {/* Tabla de Keywords */}
+            {/* Tabla de Keywords con datos de GSC */}
             <div className="border border-gray-200 rounded-lg overflow-hidden">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                      Keyword
+                      Keyword (Grupo)
+                    </th>
+                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+                      Vol.
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                      Query GSC Coincidente
                     </th>
                     <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">
                       Posición
@@ -284,14 +355,41 @@ const SEOTrackingTab = ({ group }) => {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {seoData.keywords.map((kw, idx) => (
-                    <tr key={idx}>
-                      <td className="px-4 py-3 text-sm text-gray-900">
-                        {kw.keyword}
+                    <tr key={idx} className={kw.position ? '' : 'bg-gray-50'}>
+                      <td className="px-4 py-3">
+                        <div className="text-sm font-medium text-gray-900">
+                          {kw.keyword}
+                        </div>
+                        <div className="text-xs text-gray-500 font-mono">
+                          norm: {kw.normalizedKeyword}
+                        </div>
                       </td>
                       <td className="px-4 py-3 text-center">
-                        <span className={`text-sm font-medium ${getPositionColor(kw.position)}`}>
-                          {getPositionIcon(kw.position)} {kw.position || '-'}
+                        <span className="text-xs bg-gray-100 px-2 py-0.5 rounded-full text-gray-600">
+                          {formatNumber(kw.volume || 0)}
                         </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        {kw.matchedGscQueries?.length > 0 ? (
+                          <div className="space-y-1">
+                            {kw.matchedGscQueries.map((query, qIdx) => (
+                              <div key={qIdx} className="text-xs text-primary-600 bg-primary-50 px-2 py-1 rounded inline-block mr-1">
+                                {query}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-xs text-gray-400">Sin coincidencia</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        {kw.position ? (
+                          <Badge variant={getPositionBadge(kw.position)}>
+                            {getPositionIcon(kw.position)} {kw.position}
+                          </Badge>
+                        ) : (
+                          <span className="text-xs text-gray-400">-</span>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-center text-sm text-gray-900">
                         {formatNumber(kw.clicks)}
@@ -307,13 +405,22 @@ const SEOTrackingTab = ({ group }) => {
                 </tbody>
               </table>
             </div>
+
+            {/* Leyenda de normalización */}
+            <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-xs text-blue-700">
+                <strong>Normalización:</strong> Las keywords se normalizan para compararse con GSC
+                (minúsculas, sin acentos, singular). Por ejemplo: "Perfumes Baratos" y "perfume barato"
+                se consideran equivalentes.
+              </p>
+            </div>
           </div>
 
           {/* Keywords Faltantes */}
           {seoData.missingKeywords && seoData.missingKeywords.length > 0 && (
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                ⚠️ Oportunidades de Mejora
+                Oportunidades de Mejora
               </h3>
               <div className="bg-warning-50 border border-warning-200 rounded-lg p-4">
                 <p className="text-sm text-warning-700 mb-3">

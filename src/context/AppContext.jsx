@@ -15,6 +15,7 @@ export const useApp = () => {
 export const AppProvider = ({ children }) => {
   const [credentials, setCredentials] = useState(null);
   const [prompts, setPrompts] = useState(null);
+  const [nicheDescription, setNicheDescription] = useState(null);
   const [groups, setGroups] = useState([]);
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -32,6 +33,7 @@ export const AppProvider = ({ children }) => {
       const creds = await storageService.loadCredentials();
       const prpts = storageService.getPrompts();
       const grps = storageService.getGroups();
+      const niche = storageService.getNicheDescription();
 
       console.log('📦 [AppContext] Credenciales cargadas:', {
         hasGoogle: !!creds?.google,
@@ -42,12 +44,14 @@ export const AppProvider = ({ children }) => {
       setCredentials(creds);
       setPrompts(prpts);
       setGroups(grps);
+      setNicheDescription(niche);
     } catch (error) {
       console.error('❌ [AppContext] Error cargando datos:', error);
       // Usar valores por defecto en caso de error
       setCredentials(storageService.getDefaultCredentials());
       setPrompts(storageService.getPrompts());
       setGroups([]);
+      setNicheDescription(storageService.getNicheDescription());
     } finally {
       setIsLoading(false);
       console.log('✅ [AppContext] Datos cargados');
@@ -69,6 +73,12 @@ export const AppProvider = ({ children }) => {
   const savePrompts = (newPrompts) => {
     storageService.savePrompts(newPrompts);
     setPrompts(newPrompts);
+  };
+
+  // Guardar descripción del nicho
+  const saveNicheDescription = (newDescription) => {
+    storageService.saveNicheDescription(newDescription);
+    setNicheDescription(newDescription);
   };
 
   // Guardar grupos
@@ -215,6 +225,7 @@ export const AppProvider = ({ children }) => {
     // State
     credentials,
     prompts,
+    nicheDescription,
     groups,
     selectedGroup,
     isLoading,
@@ -222,6 +233,7 @@ export const AppProvider = ({ children }) => {
     // Actions
     saveCredentials,
     savePrompts,
+    saveNicheDescription,
     saveGroups,
     updateGroup,
     addVersion,

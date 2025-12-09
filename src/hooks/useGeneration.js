@@ -3,7 +3,7 @@ import aiService from '../services/aiService';
 import { useApp } from '../context/AppContext';
 
 export const useGeneration = () => {
-  const { credentials, prompts, updateGroup, addVersion, updateGroupStatus } = useApp();
+  const { credentials, prompts, nicheDescription, updateGroup, addVersion, updateGroupStatus } = useApp();
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState(null);
 
@@ -42,13 +42,17 @@ export const useGeneration = () => {
       const mainKeyword = keywords[0]?.keyword || group.name;
       const totalVolume = keywords.reduce((sum, k) => sum + (k.volume || 0), 0);
 
+      // Preparar keywords con volumen para el prompt (formato: keyword (volumen))
+      const keywordsWithVolume = keywords.map((k) => `${k.keyword} (${k.volume || 0})`).join(', ');
+
       const variables = {
         keyword: mainKeyword,
         volume: totalVolume,
         groupName: group.name,
-        keywords: keywords.map((k) => k.keyword).join(', '),
-        relatedKeywords: keywords.map((k) => k.keyword).join(', '),
-        totalVolume
+        keywords: keywordsWithVolume,
+        relatedKeywords: keywordsWithVolume,
+        totalVolume,
+        nicheDescription: nicheDescription || ''
       };
 
       console.log('🔧 [useGeneration] Variables:', variables);
@@ -68,13 +72,15 @@ export const useGeneration = () => {
 
       console.log('✅ [useGeneration] Contenido generado:', content);
 
-      // Guardar versión
+      // Guardar versión incluyendo las keywords del grupo
       const updated = addVersion(group.id, {
         title: content.title,
         handle: content.handle,
         bodyHtml: content.bodyHtml,
         images: [],
-        status: 'generated'
+        status: 'generated',
+        mainKeyword: mainKeyword,
+        keywords: keywords.map((k) => ({ keyword: k.keyword, volume: k.volume || 0 }))
       });
 
       console.log('💾 [useGeneration] Versión guardada:', updated);
