@@ -3,36 +3,48 @@ import { AI_PROVIDERS, AI_PROVIDER_CONFIG } from '../utils/constants';
 
 class AIService {
   constructor() {
-    this.providers = AI_PROVIDER_CONFIG;
+    this.config = AI_PROVIDER_CONFIG[AI_PROVIDERS.GEMINI];
   }
 
   /**
-   * Genera contenido de producto/colección
-   * @param {string} provider - 'gpt-5' | 'claude-4-5' | 'gemini-2.5-pro'
+   * Genera contenido de producto/colección usando Gemini
+   * @param {string} provider - Solo 'gemini' soportado
    * @param {string} prompt - Template del prompt con variables
    * @param {object} variables - Variables a interpolar
-   * @param {string} apiKey - API key del provider
+   * @param {string} apiKey - API key de Google
    * @returns {Promise<{title, handle, bodyHtml}>}
    */
   async generateContent(provider, prompt, variables, apiKey) {
+    console.log('🤖 [aiService] generateContent llamado');
+    console.log('🤖 [aiService] Provider:', provider);
+    console.log('🤖 [aiService] Variables:', variables);
+    console.log('🤖 [aiService] API Key preview:', apiKey ? `${apiKey.substring(0, 8)}...` : 'NO KEY');
+
     try {
       // 1. Interpolar variables en prompt
       const interpolatedPrompt = this.interpolateVariables(prompt, variables);
+      console.log('📝 [aiService] Prompt interpolado (primeros 500 chars):', interpolatedPrompt.substring(0, 500));
 
-      // 2. Llamar a API según provider
-      const response = await this.callProvider(provider, interpolatedPrompt, apiKey);
+      // 2. Llamar a Gemini API
+      console.log('🌐 [aiService] Llamando a Gemini API...');
+      const response = await this.callGemini(interpolatedPrompt, apiKey);
+      console.log('📥 [aiService] Respuesta raw de Gemini:', response);
 
       // 3. Parsear respuesta (espera JSON)
-      const content = this.parseResponse(response, provider);
+      console.log('🔄 [aiService] Parseando respuesta...');
+      const content = this.parseResponse(response);
+      console.log('✅ [aiService] Contenido parseado:', content);
 
       // 4. Validar estructura
       if (!content.title || !content.handle || !content.bodyHtml) {
+        console.error('❌ [aiService] Respuesta incompleta:', content);
         throw new Error('Respuesta incompleta del modelo. Asegúrate de que el prompt pida JSON con title, handle y bodyHtml.');
       }
 
       return content;
     } catch (error) {
-      console.error('Error generando contenido:', error);
+      console.error('❌ [aiService] Error generando contenido:', error);
+      console.error('❌ [aiService] Error response:', error.response?.data);
       throw new Error(`Error al generar contenido: ${error.message}`);
     }
   }
@@ -58,135 +70,83 @@ class AIService {
   }
 
   /**
-   * Llama al provider específico
-   */
-  async callProvider(provider, prompt, apiKey) {
-    const config = this.providers[provider];
-
-    if (!config) {
-      throw new Error(`Provider no soportado: ${provider}`);
-    }
-
-    try {
-      if (provider === AI_PROVIDERS.GPT4) {
-        return await this.callOpenAI(config, prompt, apiKey);
-      }
-
-      if (provider === AI_PROVIDERS.CLAUDE45) {
-        return await this.callAnthropic(config, prompt, apiKey);
-      }
-
-      if (provider === AI_PROVIDERS.GEMINI3PRO) {
-        return await this.callGemini(config, prompt, apiKey);
-      }
-    } catch (error) {
-      console.error(`Error llamando a ${provider}:`, error);
-      throw error;
-    }
-  }
-
-  /**
-   * Llamada a OpenAI GPT-5
-   */
-  async callOpenAI(config, prompt, apiKey) {
-    const response = await axios.post(
-      config.endpoint,
-      {
-        model: config.model,
-        messages: [
-          {
-            role: 'system',
-            content: 'Eres un experto en SEO y copywriting para ecommerce. Responde siempre con JSON válido.'
-          },
-          { role: 'user', content: prompt }
-        ],
-        response_format: { type: 'json_object' },
-        temperature: 0.7
-      },
-      {
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json'
-        }
-      }
-    );
-
-    return { data: response.data, provider: AI_PROVIDERS.GPT4 };
-  }
-
-  /**
-   * Llamada a Anthropic Claude
-   */
-  async callAnthropic(config, prompt, apiKey) {
-    const response = await axios.post(
-      config.endpoint,
-      {
-        model: config.model,
-        max_tokens: 4096,
-        messages: [{ role: 'user', content: prompt }],
-        temperature: 0.7
-      },
-      {
-        headers: {
-          'x-api-key': apiKey,
-          'anthropic-version': config.version,
-          'Content-Type': 'application/json'
-        }
-      }
-    );
-
-    return { data: response.data, provider: AI_PROVIDERS.CLAUDE45 };
-  }
-
-  /**
    * Llamada a Google Gemini 3 Pro Preview
    */
-  async callGemini(config, prompt, apiKey) {
+  async callGemini(prompt, apiKey) {
     // Usar proxy en desarrollo para evitar CORS
     const baseUrl = import.meta.env.DEV
       ? '/api/google-ai'
       : 'https://generativelanguage.googleapis.com';
 
-    const endpoint = `${baseUrl}/v1beta/models/gemini-3-pro-preview:generateContent?key=${apiKey}`;
+    const model = 'gemini-3-pro-preview';
+    const endpoint = `${baseUrl}/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
-    const response = await axios.post(
-      endpoint,
-      {
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          responseMimeType: 'application/json',
-          temperature: 0.7
-        }
-      },
-      {
-        headers: { 'Content-Type': 'application/json' }
+    console.log('🌐 [aiService] Gemini endpoint:', endpoint.replace(apiKey, 'API_KEY_HIDDEN'));
+    console.log('🌐 [aiService] Modelo:', model);
+
+    const requestBody = {
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: {
+        responseMimeType: 'application/json',
+        temperature: 0.7
       }
-    );
+    };
 
-    return { data: response.data, provider: AI_PROVIDERS.GEMINI3PRO };
+    console.log('📤 [aiService] Request body:', JSON.stringify(requestBody, null, 2).substring(0, 500) + '...');
+
+    try {
+      const response = await axios.post(
+        endpoint,
+        requestBody,
+        {
+          headers: { 'Content-Type': 'application/json' }
+        }
+      );
+
+      console.log('📥 [aiService] Gemini response status:', response.status);
+      console.log('📥 [aiService] Gemini response data:', JSON.stringify(response.data, null, 2).substring(0, 1000));
+
+      return response.data;
+    } catch (error) {
+      console.error('❌ [aiService] Error en llamada Gemini:', error.message);
+      console.error('❌ [aiService] Error response status:', error.response?.status);
+      console.error('❌ [aiService] Error response data:', error.response?.data);
+      throw error;
+    }
   }
 
   /**
-   * Parsea respuesta según formato del provider
+   * Parsea respuesta de Gemini
    */
-  parseResponse(response, provider) {
+  parseResponse(response) {
     try {
-      if (provider === AI_PROVIDERS.GPT4) {
-        const content = response.data.choices[0].message.content;
-        return JSON.parse(content);
+      console.log('🔄 [aiService] Parseando response de Gemini...');
+
+      // Verificar estructura de respuesta
+      if (!response.candidates || !response.candidates[0]) {
+        console.error('❌ [aiService] No candidates en response:', response);
+        throw new Error('Respuesta vacía de Gemini');
       }
 
-      if (provider === AI_PROVIDERS.CLAUDE45) {
-        const content = response.data.content[0].text;
-        return JSON.parse(content);
+      const candidate = response.candidates[0];
+      console.log('🔄 [aiService] Candidate:', candidate);
+
+      if (!candidate.content || !candidate.content.parts || !candidate.content.parts[0]) {
+        console.error('❌ [aiService] No content.parts en candidate:', candidate);
+        throw new Error('Estructura de respuesta inesperada');
       }
 
-      if (provider === AI_PROVIDERS.GEMINI3PRO) {
-        const content = response.data.candidates[0].content.parts[0].text;
-        return JSON.parse(content);
-      }
+      const text = candidate.content.parts[0].text;
+      console.log('🔄 [aiService] Texto raw:', text);
+
+      // Intentar parsear JSON
+      const parsed = JSON.parse(text);
+      console.log('✅ [aiService] JSON parseado:', parsed);
+
+      return parsed;
     } catch (error) {
-      console.error('Error parseando respuesta:', error);
+      console.error('❌ [aiService] Error parseando respuesta:', error);
+      console.error('❌ [aiService] Response original:', response);
       throw new Error('Error al parsear la respuesta del modelo. Asegúrate de que el prompt pida JSON válido.');
     }
   }
@@ -203,14 +163,17 @@ class AIService {
   }
 
   /**
-   * Valida que la API key funcione
+   * Valida que la API key de Gemini funcione
    */
-  async validateAPIKey(provider, apiKey) {
+  async validateAPIKey(apiKey) {
+    console.log('🔑 [aiService] Validando API key...');
     try {
       const testPrompt = 'Responde solo con este JSON: {"test": "ok"}';
-      await this.callProvider(provider, testPrompt, apiKey);
+      await this.callGemini(testPrompt, apiKey);
+      console.log('✅ [aiService] API key válida');
       return { valid: true, message: 'API key válida' };
     } catch (error) {
+      console.error('❌ [aiService] API key inválida:', error.message);
       return {
         valid: false,
         message: error.response?.data?.error?.message || error.message

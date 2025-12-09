@@ -8,29 +8,34 @@ export const useGeneration = () => {
   const [error, setError] = useState(null);
 
   const generateContent = async (group) => {
+    console.log('🚀 [useGeneration] Iniciando generación de contenido...');
+    console.log('📦 [useGeneration] Group:', group);
+
     setIsGenerating(true);
     setError(null);
 
     try {
-      // Validar credenciales
-      const selectedModel = credentials.selectedAIModel;
-      let apiKey;
+      // Solo usamos Gemini
+      const apiKey = credentials.google?.apiKey;
 
-      if (selectedModel === 'gpt-5') {
-        apiKey = credentials.openai.apiKey;
-      } else if (selectedModel === 'claude-4-5') {
-        apiKey = credentials.anthropic.apiKey;
-      } else if (selectedModel === 'gemini-2.5-pro') {
-        apiKey = credentials.google.apiKey;
-      }
+      console.log('🔑 [useGeneration] Credentials:', {
+        hasGoogleKey: !!apiKey,
+        keyLength: apiKey?.length || 0,
+        keyPreview: apiKey ? `${apiKey.substring(0, 8)}...` : 'NO KEY'
+      });
 
       if (!apiKey) {
-        throw new Error('Configura las credenciales del modelo de IA primero');
+        const errorMsg = 'Configura tu API Key de Google (Gemini) en Configuración';
+        console.error('❌ [useGeneration]', errorMsg);
+        throw new Error(errorMsg);
       }
 
       // Determinar tipo de prompt
       const isCollection = group.type === 'collection';
       const prompt = isCollection ? prompts.collection : prompts.product;
+
+      console.log('📝 [useGeneration] Tipo:', isCollection ? 'collection' : 'product');
+      console.log('📝 [useGeneration] Prompt template length:', prompt?.length || 0);
 
       // Preparar variables
       const keywords = group.children || [];
@@ -46,16 +51,22 @@ export const useGeneration = () => {
         totalVolume
       };
 
+      console.log('🔧 [useGeneration] Variables:', variables);
+
       // Actualizar status a "generando"
       updateGroupStatus(group.id, 'generating');
+      console.log('⏳ [useGeneration] Status actualizado a "generating"');
 
-      // Llamar a AI service
+      // Llamar a AI service (solo Gemini)
+      console.log('🤖 [useGeneration] Llamando a aiService.generateContent...');
       const content = await aiService.generateContent(
-        selectedModel,
+        'gemini',
         prompt,
         variables,
         apiKey
       );
+
+      console.log('✅ [useGeneration] Contenido generado:', content);
 
       // Guardar versión
       const updated = addVersion(group.id, {
@@ -66,10 +77,13 @@ export const useGeneration = () => {
         status: 'generated'
       });
 
+      console.log('💾 [useGeneration] Versión guardada:', updated);
+
       setIsGenerating(false);
       return { success: true, content: updated };
     } catch (err) {
-      console.error('Error generando contenido:', err);
+      console.error('❌ [useGeneration] Error generando contenido:', err);
+      console.error('❌ [useGeneration] Error stack:', err.stack);
       setError(err.message);
       updateGroupStatus(group.id, 'error');
       setIsGenerating(false);

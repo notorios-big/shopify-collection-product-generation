@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { Input } from '../common/Input';
-import { Select } from '../common/Select';
 import { Button } from '../common/Button';
 import { CheckCircleIcon, XCircleIcon, ClockIcon } from '@heroicons/react/24/outline';
-import { AI_PROVIDER_CONFIG } from '../../utils/constants';
 import shopifyService from '../../services/shopifyService';
+import aiService from '../../services/aiService';
 
 const CredentialsPanel = () => {
   const { credentials, saveCredentials } = useApp();
@@ -30,8 +29,42 @@ const CredentialsPanel = () => {
   };
 
   const handleSave = () => {
+    console.log('💾 [CredentialsPanel] Guardando credenciales:', {
+      ...formData,
+      google: { ...formData.google, apiKey: formData.google?.apiKey ? '***HIDDEN***' : 'NO KEY' }
+    });
     saveCredentials(formData);
     alert('Credenciales guardadas exitosamente');
+  };
+
+  const testGeminiConnection = async () => {
+    setTesting((prev) => ({ ...prev, gemini: true }));
+    setErrors((prev) => ({ ...prev, gemini: null }));
+
+    try {
+      const apiKey = formData.google?.apiKey;
+      console.log('🧪 [CredentialsPanel] Testing Gemini API key...');
+
+      if (!apiKey) {
+        throw new Error('Ingresa una API Key primero');
+      }
+
+      const result = await aiService.validateAPIKey(apiKey);
+
+      if (result.valid) {
+        handleChange('google', 'status', 'connected');
+        alert('✅ API Key de Gemini válida!');
+      } else {
+        handleChange('google', 'status', 'error');
+        setErrors((prev) => ({ ...prev, gemini: result.message }));
+      }
+    } catch (error) {
+      console.error('❌ [CredentialsPanel] Error testing Gemini:', error);
+      handleChange('google', 'status', 'error');
+      setErrors((prev) => ({ ...prev, gemini: error.message }));
+    } finally {
+      setTesting((prev) => ({ ...prev, gemini: false }));
+    }
   };
 
   const testShopifyConnection = async () => {
@@ -69,51 +102,50 @@ const CredentialsPanel = () => {
 
   return (
     <div className="space-y-8">
-      {/* Selector de Modelo AI */}
+      {/* Google Gemini */}
       <div>
         <h3 className="text-lg font-semibold text-gray-900 mb-4">
-          🤖 Modelo de Inteligencia Artificial
+          🤖 Google Gemini - Generación de Contenido
         </h3>
-        <div className="space-y-4">
-          {Object.entries(AI_PROVIDER_CONFIG).map(([key, config]) => (
-            <label
-              key={key}
-              className={`
-                block p-4 border-2 rounded-lg cursor-pointer transition-all
-                ${
-                  formData.selectedAIModel === key
-                    ? 'border-primary-500 bg-primary-50'
-                    : 'border-gray-200 hover:border-gray-300'
-                }
-              `}
+        <div className="space-y-4 p-4 border-2 border-primary-200 bg-primary-50 rounded-lg">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-gray-700">Gemini 3 Pro Preview</span>
+            {getStatusIcon(formData.google?.status)}
+          </div>
+
+          <Input
+            label="API Key de Google AI"
+            type="password"
+            placeholder="AIzaSy..."
+            value={formData.google?.apiKey || ''}
+            onChange={(e) => handleChange('google', 'apiKey', e.target.value)}
+          />
+
+          {errors.gemini && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-700 whitespace-pre-wrap">{errors.gemini}</p>
+            </div>
+          )}
+
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={testGeminiConnection}
+              loading={testing.gemini}
+              disabled={!formData.google?.apiKey}
             >
-              <div className="flex items-start">
-                <input
-                  type="radio"
-                  name="aiModel"
-                  value={key}
-                  checked={formData.selectedAIModel === key}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, selectedAIModel: e.target.value }))}
-                  className="mt-1 mr-3"
-                />
-                <div className="flex-1">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium text-gray-900">{config.name}</span>
-                    {getStatusIcon(formData[key.replace(/-/g, '')]?.status)}
-                  </div>
-                  <Input
-                    type="password"
-                    placeholder="API Key"
-                    value={formData[key.replace(/-/g, '')]?.apiKey || ''}
-                    onChange={(e) =>
-                      handleChange(key.replace(/-/g, ''), 'apiKey', e.target.value)
-                    }
-                    className="mb-0"
-                  />
-                </div>
-              </div>
-            </label>
-          ))}
+              🧪 Probar Conexión
+            </Button>
+            <a
+              href="https://aistudio.google.com/app/apikey"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-primary-600 hover:underline"
+            >
+              Obtener API Key →
+            </a>
+          </div>
         </div>
       </div>
 

@@ -76,31 +76,42 @@ class StorageService {
    * Obtiene credenciales (intenta archivo primero, luego localStorage)
    */
   async loadCredentials() {
+    console.log('🔍 [Storage] loadCredentials() llamado');
+
     // Intentar cargar desde archivo via backend
     try {
+      console.log('🔍 [Storage] Intentando cargar desde backend...');
       const response = await axios.get('/api/credentials');
       if (response.data.success && response.data.credentials) {
-        console.log('[Storage] Credentials loaded from file');
+        console.log('✅ [Storage] Credentials loaded from file:', {
+          hasGoogle: !!response.data.credentials?.google,
+          googleKey: response.data.credentials?.google?.apiKey ? 'PRESENT' : 'MISSING'
+        });
         this.credentialsCache = response.data.credentials;
         return response.data.credentials;
       }
     } catch (error) {
-      console.warn('[Storage] Could not load from file:', error.message);
+      console.warn('⚠️ [Storage] Could not load from file:', error.message);
     }
 
     // Fallback a localStorage
+    console.log('🔍 [Storage] Intentando cargar desde localStorage...');
     const encrypted = localStorage.getItem(LOCAL_STORAGE_KEYS.CREDENTIALS);
     if (encrypted) {
       const decrypted = this.decrypt(encrypted);
       if (decrypted) {
-        console.log('[Storage] Credentials loaded from localStorage');
+        console.log('✅ [Storage] Credentials loaded from localStorage:', {
+          hasGoogle: !!decrypted?.google,
+          googleKey: decrypted?.google?.apiKey ? 'PRESENT' : 'MISSING',
+          keys: Object.keys(decrypted)
+        });
         this.credentialsCache = decrypted;
         return decrypted;
       }
     }
 
     // Devolver credenciales por defecto
-    console.log('[Storage] Using default credentials');
+    console.log('⚠️ [Storage] Using default credentials');
     return this.getDefaultCredentials();
   }
 
@@ -131,9 +142,7 @@ class StorageService {
    */
   getDefaultCredentials() {
     return {
-      selectedAIModel: 'claude-4-5',
-      openai: { apiKey: '', status: 'unconfigured' },
-      anthropic: { apiKey: '', status: 'unconfigured' },
+      selectedAIModel: 'gemini',
       google: { apiKey: '', status: 'unconfigured' },
       nanoBanana: { apiKey: '', status: 'unconfigured' },
       shopify: {
