@@ -28,7 +28,7 @@ export const AI_PROVIDER_CONFIG = {
   }
 };
 
-export const SHOPIFY_API_VERSION = '2025-01';
+export const SHOPIFY_API_VERSION = '2024-10';
 
 export const NANO_BANANA_CONFIG = {
   endpoint: 'https://generativelanguage.googleapis.com/v1/models/imagen-3.0-generate-001:predict',

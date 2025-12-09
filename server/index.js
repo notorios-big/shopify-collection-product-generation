@@ -28,8 +28,10 @@ app.post('/api/shopify/graphql', async (req, res) => {
     : `${storeUrl}.myshopify.com`;
   normalizedStore = normalizedStore.replace(/^https?:\/\//, '').replace(/\/+$/, '');
 
-  const version = apiVersion || '2025-01';
+  const version = apiVersion || '2024-10';
   const endpoint = `https://${normalizedStore}/admin/api/${version}/graphql.json`;
+
+  console.log(`[Shopify Proxy] Request to: ${endpoint}`);
 
   try {
     const response = await axios.post(
@@ -44,19 +46,26 @@ app.post('/api/shopify/graphql', async (req, res) => {
       }
     );
 
+    console.log(`[Shopify Proxy] Success:`, response.status);
     res.json(response.data);
   } catch (error) {
-    console.error('Shopify Proxy Error:', error.message);
+    console.error('[Shopify Proxy] Error:', error.message);
 
     if (error.response) {
+      console.error('[Shopify Proxy] Status:', error.response.status);
+      console.error('[Shopify Proxy] Data:', JSON.stringify(error.response.data, null, 2));
+
+      // Devolver el error real de Shopify
       return res.status(error.response.status).json({
         error: error.response.data,
-        status: error.response.status
+        status: error.response.status,
+        endpoint: endpoint
       });
     }
 
     res.status(500).json({
-      error: error.message
+      error: error.message,
+      endpoint: endpoint
     });
   }
 });

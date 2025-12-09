@@ -41,7 +41,7 @@ const CredentialsPanel = () => {
       shopifyService.init(
         formData.shopify.storeUrl,
         formData.shopify.accessToken,
-        formData.shopify.apiVersion || '2025-01'
+        formData.shopify.apiVersion || '2024-10'
       );
       const result = await shopifyService.testConnection();
 
@@ -168,8 +168,8 @@ const CredentialsPanel = () => {
 
           <Input
             label="API Version"
-            placeholder="2025-01"
-            value={formData.shopify?.apiVersion || '2025-01'}
+            placeholder="2024-10"
+            value={formData.shopify?.apiVersion || '2024-10'}
             onChange={(e) => handleChange('shopify', 'apiVersion', e.target.value)}
             helperText="Formato: YYYY-MM (ej: 2025-01, 2024-10). Usa una versión estable."
           />

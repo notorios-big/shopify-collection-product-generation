@@ -88,15 +88,24 @@ class ShopifyService {
           throw new Error('Acceso denegado. El token no tiene permisos suficientes para esta operación.');
         }
         if (status === 404) {
-          throw new Error(`Tienda no encontrada. Verifica que "${this.storeUrl}" sea correcta y la versión de API "${this.apiVersion}" exista.`);
+          const endpoint = data?.endpoint || `https://${this.storeUrl}/admin/api/${this.apiVersion}/graphql.json`;
+          throw new Error(
+            `Error 404: Endpoint no encontrado.\n` +
+            `URL: ${endpoint}\n\n` +
+            `Posibles causas:\n` +
+            `• La versión de API "${this.apiVersion}" no existe (prueba con 2024-10 o 2024-07)\n` +
+            `• El Access Token no tiene permisos de Admin API\n` +
+            `• La tienda "${this.storeUrl}" no existe`
+          );
         }
 
         // Error del proxy con detalles de Shopify
         if (data?.error) {
-          throw new Error(`Error de Shopify: ${JSON.stringify(data.error)}`);
+          const errorDetail = typeof data.error === 'string' ? data.error : JSON.stringify(data.error, null, 2);
+          throw new Error(`Error de Shopify:\n${errorDetail}`);
         }
 
-        throw new Error(`Error ${status}: ${JSON.stringify(data)}`);
+        throw new Error(`Error ${status}:\n${JSON.stringify(data, null, 2)}`);
       }
 
       throw new Error(`Error: ${error.message}`);
